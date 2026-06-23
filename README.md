@@ -63,7 +63,8 @@ Léa tourne sur du matériel physique dédié, pas sur le cloud :
 | GPU | RTX 3060 12 Go VRAM |
 | Stockage | 7 To |
 | OS | Ubuntu 22.04 |
-| Modèles IA | DeepSeek, Qwen, FLUX, MusicGen, Piper TTS |
+| Modèles LLM | DeepSeek Coder V2 16B, Qwen 2.5 14B, Mistral Nemo 12B, LLaVA (vision), Dolphin Phi |
+| Modèles génératifs | FLUX Dev, JuggernautXL, RealVisXL V5, DreamShaper 8, MusicGen, Piper TTS |
 
 ---
 
