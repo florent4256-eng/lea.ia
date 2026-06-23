@@ -1,0 +1,971 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0A0A">
+
+    <!-- Carte OSMDroid (fond plein écran) -->
+    <org.osmdroid.views.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true" />
+
+    <!-- ══════════════════════════════════════════════════════════════
+         TOP BAR (visible hors navigation)
+    ═══════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/mapsTopBar"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentTop="true"
+        android:background="#CC111111"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="16dp">
+
+        <ImageButton
+            android:id="@+id/mapsBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_back"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#FFFFFF"
+            android:contentDescription="Retour" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Léa Maps"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingStart="4dp" />
+
+        <TextView
+            android:id="@+id/gpsCoords"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GPS : --"
+            android:textColor="#60A5FA"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:maxLines="2" />
+
+        <Button
+            android:id="@+id/btnSettings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="⋮"
+            android:textSize="22sp"
+            android:textColor="#FFFFFF"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="0dp"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         WAZE — BARRE DE NAVIGATION (visible uniquement en navigation)
+         Remplace la top bar pendant la navigation
+    ═══════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/navInstructionBar"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="88dp"
+        android:layout_alignParentTop="true"
+        android:background="#E51C1D21"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <!-- Boîte de flèche de direction (style Waze) -->
+        <FrameLayout
+            android:id="@+id/navArrowBox"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="14dp"
+            android:background="#FF00C2CB">
+
+            <TextView
+                android:id="@+id/navArrowText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="↑"
+                android:textSize="36sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <!-- Distance + instruction + rue -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginEnd="8dp">
+
+            <TextView
+                android:id="@+id/navDistance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/navInstruction"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Calcul en cours..."
+                android:textColor="#CCCCCC"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/navStreet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#9EA3B0"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- Bouton stop navigation (coin haut droit) -->
+        <Button
+            android:id="@+id/btnStopNav"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:text="✕"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:background="#992626"
+            android:layout_marginEnd="12dp"
+            android:padding="0dp" />
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         Contrôles gauche (sur la carte)
+    ═══════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/leftControls"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/mapsTopBar"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp">
+
+        <Button
+            android:id="@+id/btnCenter"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:text="⊕"
+            android:textSize="22sp"
+            android:textColor="#60A5FA"
+            android:background="#CC111111"
+            android:padding="0dp"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnStyleCycle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:text="⊞"
+            android:textSize="20sp"
+            android:textColor="#94A3B8"
+            android:background="#CC111111"
+            android:padding="0dp"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnZoomIn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:text="+"
+            android:textSize="22sp"
+            android:textColor="#FFFFFF"
+            android:background="#CC111111"
+            android:padding="0dp"
+            android:layout_marginBottom="4dp" />
+
+        <Button
+            android:id="@+id/btnZoomOut"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:text="−"
+            android:textSize="22sp"
+            android:textColor="#FFFFFF"
+            android:background="#CC111111"
+            android:padding="0dp" />
+    </LinearLayout>
+
+    <!-- SOS (coin haut droit) -->
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/mapsTopBar"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="12dp">
+
+        <Button
+            android:id="@+id/btnSOS"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:text="SOS"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:background="#CC7F1D1D"
+            android:padding="0dp" />
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         WAZE — PANNEAU ITINÉRAIRE (style bottom sheet)
+    ═══════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/routePanel"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottomBar"
+        android:background="#F01C1D21"
+        android:paddingTop="8dp"
+        android:paddingBottom="12dp"
+        android:visibility="gone">
+
+        <!-- Poignée Waze -->
+        <View
+            android:layout_width="36dp"
+            android:layout_height="4dp"
+            android:background="#3AFFFFFF"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="14dp" />
+
+        <!-- Ligne origine / destination avec points de couleur -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="12dp">
+
+            <!-- Indicateurs visuels origine/dest (points + ligne) -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:paddingTop="14dp">
+
+                <View
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:background="#FF00C2CB" />
+
+                <View
+                    android:layout_width="2dp"
+                    android:layout_height="24dp"
+                    android:background="#3AFFFFFF"
+                    android:layout_marginTop="3dp"
+                    android:layout_marginBottom="3dp" />
+
+                <View
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:background="#FFFF8C00" />
+            </LinearLayout>
+
+            <!-- Champs texte origine / destination -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="10dp">
+
+                <!-- Origine -->
+                <TextView
+                    android:id="@+id/routeOriginLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:gravity="center_vertical"
+                    android:text="Ma position"
+                    android:textColor="#9EA3B0"
+                    android:textSize="13sp"
+                    android:paddingStart="10dp"
+                    android:background="#1A2A3A" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#1AFFFFFF" />
+
+                <!-- Destination (champ de saisie) -->
+                <EditText
+                    android:id="@+id/routeDestInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:hint="Où allez-vous ?"
+                    android:textColorHint="#475569"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:background="#1A2A3A"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:inputType="text"
+                    android:imeOptions="actionSearch"
+                    android:singleLine="true" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Sélecteur de mode transport + Bouton Calculer -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_vertical">
+
+            <!-- Boutons modes (icônes rondes style Waze) -->
+            <Button
+                android:id="@+id/btnModeCar"
+                android:layout_width="52dp"
+                android:layout_height="40dp"
+                android:text="🚗"
+                android:textSize="18sp"
+                android:background="#1259C3"
+                android:layout_marginEnd="6dp"
+                android:padding="0dp" />
+
+            <Button
+                android:id="@+id/btnModeWalk"
+                android:layout_width="52dp"
+                android:layout_height="40dp"
+                android:text="🚶"
+                android:textSize="18sp"
+                android:background="#1E293B"
+                android:layout_marginEnd="6dp"
+                android:padding="0dp" />
+
+            <Button
+                android:id="@+id/btnModeBike"
+                android:layout_width="52dp"
+                android:layout_height="40dp"
+                android:text="🚲"
+                android:textSize="18sp"
+                android:background="#1E293B"
+                android:padding="0dp" />
+
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+            <!-- Bouton calculer (compact, à droite) -->
+            <Button
+                android:id="@+id/btnCalculateRoute"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="Chercher →"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/btn_update_blue"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp" />
+        </LinearLayout>
+
+        <!-- ── Résumé itinéraire style Waze (caché avant calcul) ── -->
+        <LinearLayout
+            android:id="@+id/routeSummaryBlock"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:visibility="gone">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#22FFFFFF"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Label destination -->
+            <TextView
+                android:id="@+id/routeDestLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp" />
+
+            <!-- Ligne : Durée · Distance · Heure d'arrivée -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="68dp"
+                android:background="#252630"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <!-- Durée -->
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/navSummaryMin"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#FFFFFF"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="min"
+                        android:textColor="#9EA3B0"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <View android:layout_width="1dp" android:layout_height="40dp" android:background="#33FFFFFF" />
+
+                <!-- Distance -->
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/navSummaryDist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#FFFFFF"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="km"
+                        android:textColor="#9EA3B0"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <View android:layout_width="1dp" android:layout_height="40dp" android:background="#33FFFFFF" />
+
+                <!-- Heure d'arrivée -->
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/navSummaryETA"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--:--"
+                        android:textColor="#FFFFFF"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="arrivée"
+                        android:textColor="#9EA3B0"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Bouton Y ALLER (vert, pleine largeur, style Waze) -->
+            <Button
+                android:id="@+id/btnGo"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:text="Y ALLER  →"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05"
+                android:background="#FF33CC33"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Bouton effacer (discret, sous GO) -->
+            <Button
+                android:id="@+id/btnClearRoute"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:text="Effacer l'itinéraire"
+                android:textColor="#9EA3B0"
+                android:textSize="12sp"
+                android:background="@android:color/transparent" />
+
+        </LinearLayout>
+
+        <!-- Texte d'aide (visible avant calcul) -->
+        <TextView
+            android:id="@+id/routeHelpText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Entrez une destination puis appuyez sur Chercher"
+            android:textColor="#64748B"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="4dp" />
+
+    </LinearLayout>
+
+    <!-- Panel Météo (inchangé) -->
+    <LinearLayout
+        android:id="@+id/weatherPanel"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottomBar"
+        android:background="#F00A1628"
+        android:padding="14dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="MÉTÉO LOCALE"
+            android:textColor="#00F2FF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="10dp" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:gravity="center_vertical">
+
+            <LinearLayout android:orientation="vertical"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:gravity="center">
+                <TextView android:id="@+id/weatherTemp"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--°C" android:textColor="#FFFFFF"
+                    android:textSize="40sp" android:textStyle="bold" />
+                <TextView android:id="@+id/weatherFeelsLike"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Ressenti : --°C" android:textColor="#94A3B8"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout android:orientation="vertical"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:gravity="center">
+                <TextView android:id="@+id/weatherCode"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--" android:textColor="#FCD34D"
+                    android:textSize="15sp" android:textStyle="bold"
+                    android:gravity="center" android:layout_marginBottom="4dp" />
+                <TextView android:id="@+id/weatherPrecip"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Pluie : -- %" android:textColor="#60A5FA"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout android:orientation="vertical"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:gravity="center">
+                <TextView android:id="@+id/weatherWind"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="-- km/h" android:textColor="#00F2FF"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="💨 Vent" android:textColor="#64748B" android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout android:orientation="vertical"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:gravity="center">
+                <TextView android:id="@+id/weatherHumidity"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="-- %" android:textColor="#A78BFA"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="💧 Humidité" android:textColor="#64748B" android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout android:orientation="vertical"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:gravity="center">
+                <TextView android:id="@+id/weatherUV"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--" android:textColor="#FBBF24"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="☀ Indice UV" android:textColor="#64748B" android:textSize="10sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Prévisions 3 jours -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#0DFFFFFF"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout android:orientation="vertical"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:gravity="center" android:padding="8dp">
+                <TextView android:id="@+id/forecastDay0"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Auj." android:textColor="#94A3B8" android:textSize="10sp"
+                    android:layout_marginBottom="2dp" />
+                <TextView android:id="@+id/forecastEmoji0"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--" android:textSize="18sp" android:layout_marginBottom="2dp" />
+                <TextView android:id="@+id/forecastTemp0"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--/--°" android:textColor="#FFFFFF" android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <View android:layout_width="1dp" android:layout_height="match_parent"
+                android:background="#1AFFFFFF" />
+
+            <LinearLayout android:orientation="vertical"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:gravity="center" android:padding="8dp">
+                <TextView android:id="@+id/forecastDay1"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Dem." android:textColor="#94A3B8" android:textSize="10sp"
+                    android:layout_marginBottom="2dp" />
+                <TextView android:id="@+id/forecastEmoji1"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--" android:textSize="18sp" android:layout_marginBottom="2dp" />
+                <TextView android:id="@+id/forecastTemp1"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--/--°" android:textColor="#FFFFFF" android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <View android:layout_width="1dp" android:layout_height="match_parent"
+                android:background="#1AFFFFFF" />
+
+            <LinearLayout android:orientation="vertical"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:gravity="center" android:padding="8dp">
+                <TextView android:id="@+id/forecastDay2"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="J+2" android:textColor="#94A3B8" android:textSize="10sp"
+                    android:layout_marginBottom="2dp" />
+                <TextView android:id="@+id/forecastEmoji2"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--" android:textSize="18sp" android:layout_marginBottom="2dp" />
+                <TextView android:id="@+id/forecastTemp2"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--/--°" android:textColor="#FFFFFF" android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnRefreshWeather"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:text="↻ Actualiser"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:background="#1E293B" />
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         Bottom Tab Bar (visible hors navigation)
+    ═══════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentBottom="true"
+        android:background="#EE111111">
+
+        <Button
+            android:id="@+id/tabLocate"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="📍 GPS"
+            android:textSize="11sp"
+            android:textColor="#60A5FA"
+            android:background="#1259C3" />
+
+        <Button
+            android:id="@+id/tabRoute"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="🧭 Itinéraire"
+            android:textSize="11sp"
+            android:textColor="#94A3B8"
+            android:background="#1A1A1A" />
+
+        <Button
+            android:id="@+id/tabWeather"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="⛅ Météo"
+            android:textSize="11sp"
+            android:textColor="#94A3B8"
+            android:background="#1A1A1A" />
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         WAZE — BARRE BAS NAVIGATION (ETA · Durée · Distance)
+         Remplace la bottomBar pendant la navigation
+    ═══════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/navBottomBar"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true"
+        android:background="#F01C1D21"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <!-- Arrivée prévue -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingStart="16dp">
+
+            <TextView
+                android:id="@+id/navETA"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--:--"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="arrivée"
+                android:textColor="#9EA3B0"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <View android:layout_width="1dp" android:layout_height="36dp" android:background="#22FFFFFF" />
+
+        <!-- Durée restante -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/navDurationLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- min"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="restant"
+                android:textColor="#9EA3B0"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <View android:layout_width="1dp" android:layout_height="36dp" android:background="#22FFFFFF" />
+
+        <!-- Distance restante -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/navDistLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- km"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="distance"
+                android:textColor="#9EA3B0"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         Overlay Paramètres (par dessus tout)
+    ═══════════════════════════════════════════════════════════════ -->
+    <FrameLayout
+        android:id="@+id/settingsOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#B3000D1A"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/settingsCard"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="#EF0A1628"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="32dp">
+
+            <View
+                android:layout_width="40dp"
+                android:layout_height="4dp"
+                android:background="#3AFFFFFF"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="20dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Paramètres"
+                    android:textColor="#FFFFFF"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btnCloseSettings"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:text="✕"
+                    android:textSize="16sp"
+                    android:textColor="#94A3B8"
+                    android:background="#1E293B"
+                    android:padding="0dp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="MODE CARTE"
+                android:textColor="#64748B"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:layout_marginBottom="10dp" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="12dp"
+                android:background="#0D1F33">
+
+                <Button
+                    android:id="@+id/btnThemeDay"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="☀  Jour"
+                    android:textSize="13sp"
+                    android:textColor="#FFFFFF"
+                    android:background="#1259C3" />
+
+                <View android:layout_width="1dp" android:layout_height="match_parent"
+                    android:background="#1AFFFFFF" />
+
+                <Button
+                    android:id="@+id/btnThemeNight"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="🌙  Nuit"
+                    android:textSize="13sp"
+                    android:textColor="#94A3B8"
+                    android:background="#0D1B2E" />
+
+                <View android:layout_width="1dp" android:layout_height="match_parent"
+                    android:background="#1AFFFFFF" />
+
+                <Button
+                    android:id="@+id/btnThemeAuto"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="📱  Auto"
+                    android:textSize="13sp"
+                    android:textColor="#94A3B8"
+                    android:background="#0D1B2E" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/themeDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Carte claire (Voyager)"
+                android:textColor="#60A5FA"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:layout_marginBottom="4dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+</RelativeLayout>

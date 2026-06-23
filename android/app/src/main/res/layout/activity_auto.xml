@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0A0A">
+
+    <!-- ── Top Bar ── -->
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#111111"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="16dp">
+
+        <ImageButton
+            android:id="@+id/autoBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_back"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#FFFFFF"
+            android:contentDescription="Retour" />
+
+        <TextView
+            android:id="@+id/autoTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Léa Auto"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingStart="4dp" />
+
+        <TextView
+            android:id="@+id/autoConnStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="● Déconnecté"
+            android:textColor="#EF4444"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- ── Écran connexion (affiché si non connecté) ── -->
+    <LinearLayout
+        android:id="@+id/connectionScreen"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connecter un dongle OBD2"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sélectionnez un appareil Bluetooth jumelé\n(adaptateur ELM327 recommandé)"
+            android:textColor="#94A3B8"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Liste appareils -->
+        <ListView
+            android:id="@+id/deviceList"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#1A1A1A"
+            android:divider="#2A2A2A"
+            android:dividerHeight="1dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Message si liste vide -->
+        <TextView
+            android:id="@+id/noDevicesText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aucun appareil jumelé trouvé.\nActivez le Bluetooth et jumelez votre dongle dans les Paramètres Android."
+            android:textColor="#64748B"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/btnConnectDevice"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Connecter"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:background="@drawable/btn_update_blue"
+            android:enabled="false" />
+    </LinearLayout>
+
+    <!-- ── Écran principal (affiché après connexion) ── -->
+    <LinearLayout
+        android:id="@+id/mainScreen"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <!-- Tab Bar -->
+        <LinearLayout
+            android:id="@+id/tabBar"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#111111">
+
+            <Button
+                android:id="@+id/tabDashboard"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="Tableau"
+                android:textSize="11sp"
+                android:background="#1259C3"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/tabDiag"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="Diagnostic"
+                android:textSize="11sp"
+                android:background="#1A1A1A"
+                android:textColor="#94A3B8" />
+
+            <Button
+                android:id="@+id/tabChat"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="Co-Pilote"
+                android:textSize="11sp"
+                android:background="#1A1A1A"
+                android:textColor="#94A3B8" />
+
+            <Button
+                android:id="@+id/tabGodMode"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="ECU"
+                android:textSize="11sp"
+                android:background="#1A1A1A"
+                android:textColor="#EF4444"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- ── Onglet Dashboard ── -->
+        <ScrollView
+            android:id="@+id/contentDashboard"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <!-- Jauges (3 colonnes) -->
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp">
+
+                    <!-- RPM -->
+                    <LinearLayout android:id="@+id/gaugeRpm"
+                        android:orientation="vertical"
+                        android:layout_width="0dp" android:layout_height="120dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:background="#111111"
+                        android:gravity="center"
+                        android:padding="12dp">
+                        <TextView android:id="@+id/valRpm"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="0" android:textColor="#60A5FA"
+                            android:textSize="36sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="RPM" android:textColor="#64748B" android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <!-- Speed -->
+                    <LinearLayout android:id="@+id/gaugeSpeed"
+                        android:orientation="vertical"
+                        android:layout_width="0dp" android:layout_height="120dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:background="#111111"
+                        android:gravity="center"
+                        android:padding="12dp">
+                        <TextView android:id="@+id/valSpeed"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="0" android:textColor="#FFFFFF"
+                            android:textSize="36sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="KM/H" android:textColor="#64748B" android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <!-- Temp -->
+                    <LinearLayout android:id="@+id/gaugeTemp"
+                        android:orientation="vertical"
+                        android:layout_width="0dp" android:layout_height="120dp"
+                        android:layout_weight="1"
+                        android:background="#111111"
+                        android:gravity="center"
+                        android:padding="12dp">
+                        <TextView android:id="@+id/valTemp"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="0°" android:textColor="#F87171"
+                            android:textSize="36sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="°C MOTEUR" android:textColor="#64748B" android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Throttle + état -->
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#111111"
+                    android:padding="16dp"
+                    android:layout_marginBottom="12dp">
+
+                    <LinearLayout android:orientation="horizontal"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Accélérateur" android:textColor="#94A3B8"
+                            android:textSize="13sp" android:textStyle="bold" />
+                        <TextView android:id="@+id/valThrottle"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="0%" android:textColor="#34D399"
+                            android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <ProgressBar
+                        android:id="@+id/throttleBar"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="8dp"
+                        android:max="100"
+                        android:progress="0"
+                        android:progressTint="#34D399"
+                        android:progressBackgroundTint="#1E293B" />
+                </LinearLayout>
+
+                <!-- Alerte DTC -->
+                <LinearLayout
+                    android:id="@+id/dtcAlert"
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#2D1515"
+                    android:padding="14dp"
+                    android:visibility="gone">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:id="@+id/dtcAlertText"
+                        android:text="⚠ Codes défaut détectés"
+                        android:textColor="#FCA5A5"
+                        android:textSize="13sp" android:textStyle="bold" />
+                    <Button
+                        android:id="@+id/dtcAlertBtn"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Voir" android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:background="#DC2626"
+                        android:paddingStart="12dp" android:paddingEnd="12dp"
+                        android:paddingTop="4dp" android:paddingBottom="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ── Onglet Diagnostic ── -->
+        <LinearLayout
+            android:id="@+id/contentDiag"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:padding="16dp">
+
+            <Button
+                android:id="@+id/btnReadDtc"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Lire les codes défaut"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:background="@drawable/btn_update_blue"
+                android:layout_marginBottom="12dp" />
+
+            <ListView
+                android:id="@+id/dtcList"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="#111111"
+                android:divider="#1E293B"
+                android:dividerHeight="1dp"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/dtcEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="✓ Aucun code défaut trouvé"
+                android:textColor="#34D399"
+                android:textSize="14sp"
+                android:gravity="center"
+                android:padding="24dp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    android:id="@+id/btnClearDtc"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="Effacer les codes"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:background="#DC2626"
+                    android:enabled="false" />
+
+                <Button
+                    android:id="@+id/btnResetOil"
+                    android:layout_width="0dp"
+                    android:layout_height="52dp"
+                    android:layout_weight="1"
+                    android:text="Reset vidange"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:background="#1E293B" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ── Onglet Co-Pilote ── -->
+        <LinearLayout
+            android:id="@+id/contentChat"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <ListView
+                android:id="@+id/chatList"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:divider="@null"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:clipToPadding="false"
+                android:background="#0A0A0A" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#111111"
+                android:padding="12dp">
+
+                <EditText
+                    android:id="@+id/chatInput"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:hint="Ex : Pourquoi le voyant clignote ?"
+                    android:textColorHint="#475569"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:background="#1E293B"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:inputType="text"
+                    android:imeOptions="actionSend"
+                    android:layout_marginEnd="8dp" />
+
+                <Button
+                    android:id="@+id/btnChatSend"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:text="→"
+                    android:textSize="18sp"
+                    android:textColor="#FFFFFF"
+                    android:background="#1259C3"
+                    android:padding="0dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ── Onglet God Mode ECU ── -->
+        <ScrollView
+            android:id="@+id/contentGodMode"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <!-- Avertissement -->
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#2D1515"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="⚠ ZONE CRITIQUE — CÂBLE E-NET REQUIS"
+                        android:textColor="#FCA5A5"
+                        android:textSize="13sp" android:textStyle="bold"
+                        android:layout_marginBottom="4dp" />
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="N'utilisez JAMAIS le Bluetooth pour l'écriture ECU. Branchez le câble E-NET avant de continuer."
+                        android:textColor="#F87171"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- Mode Éco -->
+                <Button
+                    android:id="@+id/btnModeEco"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:text="MODE ÉCO — Bride injection, max économie"
+                    android:textColor="#34D399"
+                    android:textStyle="bold"
+                    android:background="#0D2E1E"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Mode Normal -->
+                <Button
+                    android:id="@+id/btnModeNormal"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:text="MODE NORMAL — Cartographie constructeur"
+                    android:textColor="#60A5FA"
+                    android:textStyle="bold"
+                    android:background="#0F1C2E"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Mode Sport -->
+                <Button
+                    android:id="@+id/btnModeSport"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:text="MODE SPORT — +15% Couple, pédale réactive"
+                    android:textColor="#FDBA74"
+                    android:textStyle="bold"
+                    android:background="#2D1A0D"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Stage 1 -->
+                <Button
+                    android:id="@+id/btnStage1"
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp"
+                    android:text="⚡ INJECTER STAGE 1 (CUSTOM)"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:background="#991B1B" />
+            </LinearLayout>
+        </ScrollView>
+
+    </LinearLayout>
+
+</LinearLayout>

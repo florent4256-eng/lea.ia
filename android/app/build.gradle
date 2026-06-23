@@ -1,0 +1,141 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+// Lecture des credentials de signature depuis keystore.properties (jamais committé)
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace = "com.flolov42.lea_v3"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.flolov42.lea_v3"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 137
+        versionName "3.3.9"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile     file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias      keystoreProperties['keyAlias']
+                keyPassword   keystoreProperties['keyPassword']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            // true = libs DEFLATED (compressées) dans l'APK → extraites à l'install
+            // → aucune contrainte d'alignement → fonctionne sur Android 16 (Pixel 7A)
+            useLegacyPackaging true
+        }
+        resources {
+            excludes += ['META-INF/versions/9/previous-compilation-data.bin']
+        }
+    }
+
+    // ── JETPACK COMPOSE ────────────────────────────────────────────────────────
+    buildFeatures {
+        compose true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.5.14'
+    }
+
+    kotlinOptions {
+        jvmTarget = '21'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+    implementation 'net.java.dev.jna:jna:5.14.0@aar'
+    implementation ('com.alphacephei:vosk-android:+') {
+        exclude group: 'net.java.dev.jna', module: 'jna'
+    }
+    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+    implementation "androidx.work:work-runtime:2.9.0"
+
+    // ── GOOGLE SERVICES ────────────────────────────────────────────────────────
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
+    implementation 'com.google.android.gms:play-services-auth-base:18.0.10'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+
+    // ── LÉA MAPS — OSMDroid (carte OpenStreetMap, zéro clé API) ───────────────
+    implementation 'org.osmdroid:osmdroid-android:6.1.18'
+
+    // ── LÉA HOME — HTTP + JSON ─────────────────────────────────────────────────
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // ── TRADUCTION OFFLINE — ML Kit (modèles téléchargés sur l'appareil) ──────
+    implementation 'com.google.mlkit:translate:17.0.2'
+
+    // ── JETPACK COMPOSE + MATERIAL 3 ──────────────────────────────────────────
+    def composeBom = platform('androidx.compose:compose-bom:2024.05.00')
+    implementation composeBom
+    androidTestImplementation composeBom
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-graphics'
+    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.material:material-icons-extended'
+    implementation 'androidx.compose.animation:animation'
+    implementation 'androidx.compose.foundation:foundation'
+    implementation 'androidx.activity:activity-compose:1.9.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.0'
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest'
+
+    // ── SCENEVIEW — Moteur 3D natif (viewer .glb interactif) ──────────────────
+    implementation 'io.github.sceneview:sceneview:2.2.1'
+
+    // ── KOTLIN ─────────────────────────────────────────────────────────────────
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

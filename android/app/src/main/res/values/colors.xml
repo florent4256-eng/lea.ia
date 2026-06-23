@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Galaxy theme base -->
+    <color name="lea_bg">#FF011627</color>
+    <color name="lea_cyan">#FF00E5FF</color>
+    <color name="lea_card">#FF012040</color>
+
+    <!-- Bouton TÉLÉPHONE — vert galaxie (#00D9FF) -->
+    <color name="button_telephone_green">#FF00D9FF</color>
+    <color name="button_telephone_bg">#0D00D9FF</color>
+
+    <!-- Bouton TERMINAL — bleu nuit galaxie -->
+    <color name="button_terminal_dark_blue">#FF0A1F3F</color>
+    <color name="button_terminal_border">#4000F2FF</color>
+
+    <!-- Bouton ROUTINE -->
+    <color name="button_routine_cyan">#FF00E5FF</color>
+    <color name="button_routine_bg">#1A00E5FF</color>
+
+    <!-- Bouton AGENT -->
+    <color name="button_agent_purple">#FF7B2CBF</color>
+    <color name="button_agent_bg">#1A7B2CBF</color>
+
+    <!-- Bouton ALERTE -->
+    <color name="button_alert_red">#FFFF4444</color>
+    <color name="button_alert_bg">#1AFF4444</color>
+
+    <!-- Effets communs -->
+    <color name="button_shadow_dark">#FF1A1A2E</color>
+    <color name="button_highlight_light">#FF00F5FF</color>
+    <color name="button_border_glow">#3300F5FF</color>
+
+    <!-- Status colors -->
+    <color name="status_active">#FF4CAF50</color>
+    <color name="status_inactive">#FF546E7A</color>
+    <color name="text_secondary">#FFB0BEC5</color>
+    <color name="text_muted">#FF37474F</color>
+
+    <!-- Feature 4: Themes -->
+    <!-- Thème Minimal -->
+    <color name="theme_minimal_bg">#FF0A0A0A</color>
+    <color name="theme_minimal_primary">#FFE0E0E0</color>
+    <color name="theme_minimal_card">#FF1A1A1A</color>
+    <!-- Thème Ocean -->
+    <color name="theme_ocean_bg">#FF001F3F</color>
+    <color name="theme_ocean_primary">#FF00B4D8</color>
+    <color name="theme_ocean_card">#FF023E8A</color>
+    <!-- Thème Forest -->
+    <color name="theme_forest_bg">#FF0A1F0A</color>
+    <color name="theme_forest_primary">#FF4CAF50</color>
+    <color name="theme_forest_card">#FF1B3A1B</color>
+    <!-- Thème Sunset -->
+    <color name="theme_sunset_bg">#FF1A0A00</color>
+    <color name="theme_sunset_primary">#FFFF6B35</color>
+    <color name="theme_sunset_card">#FF2D1200</color>
+    <!-- Thème Neon -->
+    <color name="theme_neon_bg">#FF000000</color>
+    <color name="theme_neon_primary">#FFFF00FF</color>
+    <color name="theme_neon_card">#FF0D0D0D</color>
+    <!-- Feature 8: Voice -->
+    <color name="voice_listening">#FF7B2CBF</color>
+    <!-- Feature 10: Social -->
+    <color name="social_gold">#FFFFD700</color>
+    <color name="social_silver">#FFC0C0C0</color>
+    <color name="social_bronze">#FFCD7F32</color>
+</resources>

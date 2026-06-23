@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Variables de base pour forcer le thème sombre */
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --primary: 221 100% 50%;
+  }
+}
+
+/* Forçage radical du corps de l'application */
+body {
+  background-color: #000814 !important; /* Ton Bleu Nuit Profond */
+  color: #f8fafc;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Empêche le scroll global, tout se passe dans l'interface */
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Sélection de texte style hacker/pro */
+::selection {
+  background: rgba(0, 242, 255, 0.3);
+  color: #ffffff;
+}

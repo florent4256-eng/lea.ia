@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_habit_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#CC011627"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widget_habit_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Habitudes"
+        android:textColor="#00E5FF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:gravity="center" />
+
+    <TextView
+        android:id="@+id/widget_habit_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0/0"
+        android:textColor="#FFFFFF"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginTop="4dp" />
+
+    <ProgressBar
+        android:id="@+id/widget_habit_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="4dp"
+        android:max="10"
+        android:progress="0" />
+
+    <TextView
+        android:id="@+id/widget_habit_streak"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🔥 0 jours"
+        android:textColor="#B0BEC5"
+        android:textSize="11sp"
+        android:gravity="center"
+        android:layout_marginTop="4dp" />
+
+</LinearLayout>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_coins_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#CC011627"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widget_coins_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="LÉA Coins"
+        android:textColor="#00E5FF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:gravity="center" />
+
+    <TextView
+        android:id="@+id/widget_coins_balance"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🪙 0"
+        android:textColor="#FFD700"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginTop="4dp" />
+
+    <TextView
+        android:id="@+id/widget_coins_ach"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🏆 0 achievements"
+        android:textColor="#B0BEC5"
+        android:textSize="11sp"
+        android:gravity="center"
+        android:layout_marginTop="4dp" />
+
+</LinearLayout>

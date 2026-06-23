@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_quests_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#CC011627"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widget_quests_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Quêtes du Jour"
+        android:textColor="#00E5FF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:gravity="center" />
+
+    <TextView
+        android:id="@+id/widget_quests_count"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0/0 complétées"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginTop="4dp" />
+
+    <ProgressBar
+        android:id="@+id/widget_quests_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="4dp"
+        android:max="5"
+        android:progress="0" />
+
+    <TextView
+        android:id="@+id/widget_quests_next"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="⚔️ ..."
+        android:textColor="#B0BEC5"
+        android:textSize="11sp"
+        android:gravity="center"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="1" />
+
+</LinearLayout>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Autorisation explicite pour l'IP de la Forge -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">192.168.1.102</domain>
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+    <!-- Cloudflare Tunnel: HTTPS/WSS uniquement, pas besoin de cleartext -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">lea-bunker.lea-ia-local.com</domain>
+    </domain-config>
+    <!-- Fallback absolu pour Android 16 -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

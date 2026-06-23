@@ -1,0 +1,47 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# FICHIERS SECRETS — JAMAIS SUR GITHUB
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Dépendances
+node_modules/
+android/node_modules/
+
+# Build (généré automatiquement, inutile à publier)
+dist/
+android/app/build/
+android/build/
+*.apk
+*.aab
+
+# Variables d'environnement et secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Capacitor (généré, pas à versionner)
+android/.gradle/
+android/local.properties
+android/app/google-services.json
+
+# VS Code
+.vscode/settings.json
+
+# Dossiers privés — backend, moteurs, modèles
+server/
+lea_crypto_core/
+lea_frontend/
+local-doc/
+shap_e_model_cache/
+
+# Modèles IA (trop lourds et propriétaires)
+*.gguf
+*.safetensors
+*.pt
+*.bin
+*.ckpt
+
+# Logs et cache
+*.log
+.DS_Store
+Thumbs.db
