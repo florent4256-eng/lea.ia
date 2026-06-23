@@ -179,7 +179,7 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
             // 🟢 MATRICE ÉCONOMIQUE & SÉCURITÉ : Synchronisation complète à la connexion
             const userSub = data.abonnement || 'free';
             const defaultTokens = userSub === 'ultra' ? '10000' : userSub === 'pro' ? '7000' : userSub === 'ai_plus' ? '3000' : '50';
-            const defaultDaily = userSub === 'ultra' ? '200' : userSub === 'pro' ? '50' : userSub === 'ai_plus' ? '10' : '5';
+            const defaultDaily = userSub === 'ultra' ? '200' : userSub === 'pro' ? '100' : userSub === 'ai_plus' ? '50' : '20';
 
             localStorage.setItem('lea_currentUser', formattedPseudo);
             
@@ -226,7 +226,7 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
             // 🟢 MATRICE ÉCONOMIQUE : Synchronisation à la connexion
             const userSub = data.abonnement || 'free';
             const defaultTokens = userSub === 'ultra' ? '10000' : userSub === 'pro' ? '7000' : userSub === 'ai_plus' ? '3000' : '50';
-            const defaultDaily = userSub === 'ultra' ? '200' : userSub === 'pro' ? '50' : userSub === 'ai_plus' ? '10' : '5';
+            const defaultDaily = userSub === 'ultra' ? '200' : userSub === 'pro' ? '100' : userSub === 'ai_plus' ? '50' : '20';
 
             localStorage.setItem('lea_currentUser', formattedPseudo);
             localStorage.setItem('lea_isAdult', isAdult.toString());
