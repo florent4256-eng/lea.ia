@@ -1,33 +1,36 @@
-# LÉA V3 — Intelligence Artificielle Souveraine
+# LÉA — Intelligence Artificielle Locale
 
-> **Zéro abonnement. Zéro cloud. 100% local.**
-> Ton IA tourne sur ton matériel. Tes données ne quittent jamais ta machine.
+> Une IA qui tourne sur notre propre matériel. Tes données ne quittent jamais nos serveurs locaux.
 
----
-
-## Pourquoi Léa ?
-
-Les assistants IA comme ChatGPT coûtent 20€/mois et envoient toutes tes données sur des serveurs américains.
-
-Léa tourne entièrement sur **ton propre PC** grâce à [Ollama](https://ollama.com). Une fois installée : **0€/mois, 0 donnée envoyée.**
+🌐 **Disponible sur** : [lea-bunker.lea-ia-local.com](https://lea-bunker.lea-ia-local.com/)
 
 ---
 
-## Ce que Léa sait faire
+## C'est quoi Léa ?
 
-| Module | Description |
-|---|---|
-| **Léa Terminal** | Assistant IA conversationnel (voix + texte) |
-| **Studio Nano** | Génération d'images IA (FLUX, SDXL, SD1.5) |
-| **Studio Lyria** | Génération musicale (MusicGen) |
-| **Studio Veo** | Génération vidéo IA |
-| **Léa Chat** | Messagerie chiffrée entre utilisateurs |
-| **Léa Protect** | Sécurité & surveillance |
-| **Léa Academy** | Cours et apprentissage |
-| **Léa Crypto** | Trading et portefeuille |
-| **Léa Shop** | Abonnements et tokens |
-| **Languages** | Traduction locale multi-langues |
-| **Léa Love** | Compagnon IA personnalisé |
+Les assistants IA comme ChatGPT envoient toutes tes données sur des serveurs américains.
+
+Léa tourne sur **notre propre infrastructure physique** — GPU dédié, serveur local, zéro cloud. Tes conversations, tes images, ta voix : tout reste chez nous, en France.
+
+Crée un compte, télécharge l'APK, et c'est parti.
+
+---
+
+## Modules disponibles
+
+| Module | Description | Statut |
+|---|---|---|
+| **Léa Terminal** | Assistant IA conversationnel (voix + texte) | ✅ Disponible |
+| **Léa Agent** | Agent IA qui code et automatise à ta place | ✅ Disponible |
+| **Studio Nano** | Génération d'images IA (FLUX, SDXL, SD1.5) | ✅ Disponible |
+| **Studio Lyria** | Génération musicale (MusicGen) | ✅ Disponible |
+| **Studio Veo** | Génération vidéo IA | ✅ Disponible |
+| **Studio Forge 3D** | Génération de modèles 3D | ✅ Disponible |
+| **Léa Chat** | Messagerie chiffrée entre utilisateurs | ✅ Disponible |
+| **Léa Protect** | Sécurité & surveillance | ✅ Disponible |
+| **Léa Academy** | Cours et apprentissage | ✅ Disponible |
+| **Léa Crypto** | Trading et portefeuille crypto | ✅ Disponible |
+| **Languages** | Traduction locale multi-langues | ✅ Disponible |
 
 ---
 
@@ -41,26 +44,34 @@ Léa est disponible en application Android native.
 
 ---
 
-## Configuration minimale recommandée
+## Comment accéder à Léa ?
 
-Pour faire tourner le serveur IA local :
+1. Va sur [lea-bunker.lea-ia-local.com](https://lea-bunker.lea-ia-local.com/)
+2. Crée un compte gratuit
+3. Commence à utiliser Léa directement
 
-| Composant | Minimum | Recommandé |
-|---|---|---|
-| GPU | 8 Go VRAM | 12 Go VRAM (RTX 3060) |
-| RAM | 16 Go | 32 Go |
-| Stockage | 50 Go libre | 100 Go SSD |
-| OS | Ubuntu 20.04+ | Ubuntu 22.04+ |
-
-> Sans GPU dédié, Léa tourne en mode CPU (lent mais fonctionnel pour le chat).
+**Compte gratuit** : accès à l'ensemble des modules. Des tokens sont disponibles à l'achat pour les générations avancées (images, vidéos, musique).
 
 ---
 
-## Interface uniquement (ce repo)
+## Notre infrastructure
 
-Ce dépôt contient **l'interface frontend** de Léa (React + TypeScript).
+Léa tourne sur du matériel physique dédié, pas sur le cloud :
 
-Le serveur backend (moteur IA, gestion utilisateurs, génération) est **propriétaire** et non publié — c'est ce qui fait tourner l'intelligence de Léa.
+| Composant | Détail |
+|---|---|
+| GPU | RTX 3060 12 Go VRAM |
+| Stockage | 7 To |
+| OS | Ubuntu 22.04 |
+| Modèles IA | DeepSeek, Qwen, FLUX, MusicGen, Piper TTS |
+
+---
+
+## Ce repo
+
+Ce dépôt contient **l'interface frontend** de Léa (React + TypeScript + Android).
+
+Le serveur backend (moteur IA, gestion utilisateurs, génération) est propriétaire et non publié.
 
 ---
 
@@ -91,4 +102,4 @@ Le backend et les modèles IA entraînés restent propriétaires.
 
 ---
 
-*Projet développé et maintenu par [@flolov42](https://github.com/flolov42)*
+*Projet développé et maintenu par [@florent4256-eng](https://github.com/florent4256-eng)*
