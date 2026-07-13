@@ -3,25 +3,25 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0A0A0A">
+    android:background="#020617">
 
     <!-- ── Top Bar ── -->
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="#111111"
+        android:layout_height="64dp"
+        android:background="#020617"
         android:gravity="center_vertical"
-        android:paddingStart="8dp"
+        android:paddingStart="10dp"
         android:paddingEnd="16dp">
 
         <ImageButton
             android:id="@+id/autoBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:src="@drawable/ic_back"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="#FFFFFF"
+            android:background="@drawable/lea_auto_back_circle_bg"
+            android:tint="#00E5FF"
             android:contentDescription="Retour" />
 
         <TextView
@@ -33,7 +33,7 @@
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:paddingStart="4dp" />
+            android:paddingStart="10dp" />
 
         <TextView
             android:id="@+id/autoConnStatus"
@@ -42,7 +42,12 @@
             android:text="● Déconnecté"
             android:textColor="#EF4444"
             android:textSize="11sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:background="@drawable/lea_auto_card_bg"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
     </LinearLayout>
 
     <!-- ── Écran connexion (affiché si non connecté) ── -->
@@ -78,9 +83,10 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#1A1A1A"
-            android:divider="#2A2A2A"
+            android:background="@drawable/lea_auto_card_bg"
+            android:divider="#1EFFFFFF"
             android:dividerHeight="1dp"
+            android:padding="4dp"
             android:layout_marginBottom="16dp" />
 
         <!-- Message si liste vide -->
@@ -119,8 +125,13 @@
             android:id="@+id/tabBar"
             android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="#111111">
+            android:layout_height="52dp"
+            android:background="@drawable/lea_auto_tabbar_bg"
+            android:padding="4dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp">
 
             <Button
                 android:id="@+id/tabDashboard"
@@ -129,7 +140,8 @@
                 android:layout_weight="1"
                 android:text="Tableau"
                 android:textSize="11sp"
-                android:background="#1259C3"
+                android:textAllCaps="false"
+                android:background="@drawable/lea_auto_tab_active_bg"
                 android:textColor="#FFFFFF" />
 
             <Button
@@ -139,8 +151,9 @@
                 android:layout_weight="1"
                 android:text="Diagnostic"
                 android:textSize="11sp"
-                android:background="#1A1A1A"
-                android:textColor="#94A3B8" />
+                android:textAllCaps="false"
+                android:background="@drawable/lea_auto_tab_inactive_bg"
+                android:textColor="#64748B" />
 
             <Button
                 android:id="@+id/tabChat"
@@ -149,8 +162,9 @@
                 android:layout_weight="1"
                 android:text="Co-Pilote"
                 android:textSize="11sp"
-                android:background="#1A1A1A"
-                android:textColor="#94A3B8" />
+                android:textAllCaps="false"
+                android:background="@drawable/lea_auto_tab_inactive_bg"
+                android:textColor="#64748B" />
 
             <Button
                 android:id="@+id/tabGodMode"
@@ -159,7 +173,8 @@
                 android:layout_weight="1"
                 android:text="ECU"
                 android:textSize="11sp"
-                android:background="#1A1A1A"
+                android:textAllCaps="false"
+                android:background="@drawable/lea_auto_tab_inactive_bg"
                 android:textColor="#EF4444"
                 android:visibility="gone" />
         </LinearLayout>
@@ -190,7 +205,7 @@
                         android:layout_width="0dp" android:layout_height="120dp"
                         android:layout_weight="1"
                         android:layout_marginEnd="6dp"
-                        android:background="#111111"
+                        android:background="@drawable/lea_auto_card_bg"
                         android:gravity="center"
                         android:padding="12dp">
                         <TextView android:id="@+id/valRpm"
@@ -207,7 +222,7 @@
                         android:layout_width="0dp" android:layout_height="120dp"
                         android:layout_weight="1"
                         android:layout_marginEnd="6dp"
-                        android:background="#111111"
+                        android:background="@drawable/lea_auto_card_bg"
                         android:gravity="center"
                         android:padding="12dp">
                         <TextView android:id="@+id/valSpeed"
@@ -223,7 +238,7 @@
                         android:orientation="vertical"
                         android:layout_width="0dp" android:layout_height="120dp"
                         android:layout_weight="1"
-                        android:background="#111111"
+                        android:background="@drawable/lea_auto_card_bg"
                         android:gravity="center"
                         android:padding="12dp">
                         <TextView android:id="@+id/valTemp"
@@ -240,7 +255,7 @@
                     android:orientation="vertical"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#111111"
+                    android:background="@drawable/lea_auto_card_bg"
                     android:padding="16dp"
                     android:layout_marginBottom="12dp">
 
@@ -274,7 +289,7 @@
                     android:orientation="horizontal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#2D1515"
+                    android:background="@drawable/lea_auto_alert_bg"
                     android:padding="14dp"
                     android:visibility="gone">
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content"
@@ -288,9 +303,10 @@
                         android:layout_width="wrap_content" android:layout_height="wrap_content"
                         android:text="Voir" android:textColor="#FFFFFF"
                         android:textSize="11sp"
-                        android:background="#DC2626"
-                        android:paddingStart="12dp" android:paddingEnd="12dp"
-                        android:paddingTop="4dp" android:paddingBottom="4dp" />
+                        android:textAllCaps="false"
+                        android:background="@drawable/lea_auto_danger_btn_bg"
+                        android:paddingStart="14dp" android:paddingEnd="14dp"
+                        android:paddingTop="6dp" android:paddingBottom="6dp" />
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>
@@ -311,6 +327,7 @@
                 android:text="Lire les codes défaut"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
+                android:textAllCaps="false"
                 android:background="@drawable/btn_update_blue"
                 android:layout_marginBottom="12dp" />
 
@@ -319,9 +336,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:background="#111111"
-                android:divider="#1E293B"
+                android:background="@drawable/lea_auto_card_bg"
+                android:divider="#1EFFFFFF"
                 android:dividerHeight="1dp"
+                android:padding="4dp"
                 android:layout_marginBottom="12dp" />
 
             <TextView
@@ -349,7 +367,8 @@
                     android:text="Effacer les codes"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
-                    android:background="#DC2626"
+                    android:textAllCaps="false"
+                    android:background="@drawable/lea_auto_danger_btn_bg"
                     android:enabled="false" />
 
                 <Button
@@ -360,7 +379,8 @@
                     android:text="Reset vidange"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
-                    android:background="#1E293B" />
+                    android:textAllCaps="false"
+                    android:background="@drawable/lea_auto_neutral_btn_bg" />
             </LinearLayout>
         </LinearLayout>
 
@@ -381,13 +401,13 @@
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:clipToPadding="false"
-                android:background="#0A0A0A" />
+                android:background="#020617" />
 
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="#111111"
+                android:background="#020617"
                 android:padding="12dp">
 
                 <EditText
@@ -399,9 +419,9 @@
                     android:textColorHint="#475569"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp"
-                    android:background="#1E293B"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
+                    android:background="@drawable/lea_auto_input_bg"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
                     android:inputType="text"
                     android:imeOptions="actionSend"
                     android:layout_marginEnd="8dp" />
@@ -413,7 +433,7 @@
                     android:text="→"
                     android:textSize="18sp"
                     android:textColor="#FFFFFF"
-                    android:background="#1259C3"
+                    android:background="@drawable/lea_auto_send_btn_bg"
                     android:padding="0dp" />
             </LinearLayout>
         </LinearLayout>
@@ -436,7 +456,7 @@
                     android:orientation="vertical"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#2D1515"
+                    android:background="@drawable/lea_auto_alert_bg"
                     android:padding="16dp"
                     android:layout_marginBottom="16dp">
                     <TextView
@@ -460,7 +480,8 @@
                     android:text="MODE ÉCO — Bride injection, max économie"
                     android:textColor="#34D399"
                     android:textStyle="bold"
-                    android:background="#0D2E1E"
+                    android:textAllCaps="false"
+                    android:background="@drawable/lea_auto_mode_eco_bg"
                     android:layout_marginBottom="8dp" />
 
                 <!-- Mode Normal -->
@@ -471,7 +492,8 @@
                     android:text="MODE NORMAL — Cartographie constructeur"
                     android:textColor="#60A5FA"
                     android:textStyle="bold"
-                    android:background="#0F1C2E"
+                    android:textAllCaps="false"
+                    android:background="@drawable/lea_auto_mode_normal_bg"
                     android:layout_marginBottom="8dp" />
 
                 <!-- Mode Sport -->
@@ -482,7 +504,8 @@
                     android:text="MODE SPORT — +15% Couple, pédale réactive"
                     android:textColor="#FDBA74"
                     android:textStyle="bold"
-                    android:background="#2D1A0D"
+                    android:textAllCaps="false"
+                    android:background="@drawable/lea_auto_mode_sport_bg"
                     android:layout_marginBottom="16dp" />
 
                 <!-- Stage 1 -->
@@ -494,7 +517,8 @@
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:background="#991B1B" />
+                    android:textAllCaps="false"
+                    android:background="@drawable/lea_auto_stage1_bg" />
             </LinearLayout>
         </ScrollView>
 

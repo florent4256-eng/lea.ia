@@ -4,6 +4,8 @@ import {
   Clock, Disc3, X, RefreshCw,
   AlertCircle, Zap, Trash2
 } from 'lucide-react';
+import { saveFile } from '../../lib/download';
+import { useConfirmToast } from '../../hooks/useConfirmToast';
 
 const SERVER = () => (window as any).LEA_SERVER_URL || '';
 const currentUser = () => localStorage.getItem('lea_currentUser') || 'invite';
@@ -144,6 +146,7 @@ const BPM_PRESETS = [
 
 // ── Composant principal ────────────────────────────────────────────────────
 export const StudioLyria = () => {
+  const { askConfirm, ConfirmToastHost } = useConfirmToast();
   const [tab, setTab] = useState<'create' | 'library'>('create');
 
   const [selectedLang, setSelectedLang] = useState<string>('fr');
@@ -338,18 +341,20 @@ export const StudioLyria = () => {
   };
 
   const deleteTrack = async (track: TrackItem) => {
-    if (!confirm(`Supprimer "${track.title || track.name}" ?`)) return;
-    try {
-      const r = await fetch(`${SERVER()}/api/studio/lyria/file/${currentUser()}/${encodeURIComponent(track.name)}`, { method: 'DELETE' });
-      if (r.ok) {
-        setLibrary(prev => prev.filter(t => t.name !== track.name));
-        if (currentTrack?.endsWith(track.name)) { setCurrentTrack(null); setIsPlaying(false); }
-      }
-    } catch {}
+    askConfirm(`Supprimer "${track.title || track.name}" ?`, async () => {
+      try {
+        const r = await fetch(`${SERVER()}/api/studio/lyria/file/${currentUser()}/${encodeURIComponent(track.name)}`, { method: 'DELETE' });
+        if (r.ok) {
+          setLibrary(prev => prev.filter(t => t.name !== track.name));
+          if (currentTrack?.endsWith(track.name)) { setCurrentTrack(null); setIsPlaying(false); }
+        }
+      } catch {}
+    });
   };
 
   return (
     <div className="flex flex-col h-full bg-[#020617] text-slate-200 overflow-hidden relative">
+      <ConfirmToastHost />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-fuchsia-900/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute top-0 right-0 w-72 h-72 bg-purple-900/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -390,9 +395,9 @@ export const StudioLyria = () => {
               onChange={e => { if (audioRef.current) audioRef.current.currentTime = parseFloat(e.target.value); }}
               className="flex-1 h-1 accent-fuchsia-500 cursor-pointer" />
             <span className="text-[10px] font-mono text-slate-500 w-8 shrink-0">{fmtTime(audioDuration)}</span>
-            <a href={currentTrack} download className="w-7 h-7 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center transition-all">
+            <button onClick={() => saveFile(currentTrack!, `lea_musique_${Date.now()}.wav`)} className="w-7 h-7 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center transition-all">
               <Download size={12} className="text-slate-400" />
-            </a>
+            </button>
             <button onClick={() => { setCurrentTrack(null); setIsPlaying(false); }}
               className="w-7 h-7 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center transition-all">
               <X size={12} className="text-slate-400" />
@@ -613,11 +618,10 @@ export const StudioLyria = () => {
                         className="w-7 h-7 bg-fuchsia-500/20 hover:bg-fuchsia-500/40 rounded-lg flex items-center justify-center transition-all">
                         <Play size={11} className="text-fuchsia-300" />
                       </button>
-                      <a href={`${SERVER()}${track.url}`}
-                        download={track.title ? `${track.title}.wav` : track.name}
+                      <button onClick={() => saveFile(`${SERVER()}${track.url}`, track.title ? `${track.title}.wav` : track.name)}
                         className="w-7 h-7 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center transition-all">
                         <Download size={11} className="text-slate-400" />
-                      </a>
+                      </button>
                       <button onClick={() => deleteTrack(track)}
                         className="w-7 h-7 bg-red-950/50 hover:bg-red-900/60 rounded-lg flex items-center justify-center transition-all">
                         <Trash2 size={11} className="text-red-400" />

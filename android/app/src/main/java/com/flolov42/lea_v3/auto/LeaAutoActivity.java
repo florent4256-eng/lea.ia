@@ -3,6 +3,7 @@ package com.flolov42.lea_v3.auto;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.SharedPreferences;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -191,7 +192,7 @@ public class LeaAutoActivity extends AppCompatActivity {
                 BluetoothDevice d = devices.get(pos);
                 tv.setText(d.getName() != null ? d.getName() : d.getAddress());
                 tv.setTextColor(0xFFFFFFFF);
-                tv.setBackgroundColor(0xFF1A1A1A);
+                tv.setBackground(rowBg(0x14FFFFFF));
                 tv.setPadding(32, 28, 32, 28);
                 return tv;
             }
@@ -205,7 +206,7 @@ public class LeaAutoActivity extends AppCompatActivity {
                 TextView tv = (TextView) super.getView(pos, convertView, parent);
                 tv.setText(getItem(pos));
                 tv.setTextColor(0xFFFCA5A5);
-                tv.setBackgroundColor(0xFF1A0A0A);
+                tv.setBackground(rowBg(0x1AEF4444));
                 tv.setPadding(24, 20, 24, 20);
                 tv.setTextSize(13f);
                 return tv;
@@ -223,8 +224,15 @@ public class LeaAutoActivity extends AppCompatActivity {
                 tv.setText((isUser ? currentUser : "Léa") + ": " + (msg != null ? msg.text : ""));
                 tv.setTextColor(isUser ? 0xFFCBD5E1 : 0xFFFC8181);
                 tv.setTextSize(13f);
-                tv.setPadding(24, 12, 24, 12);
-                tv.setBackgroundColor(isUser ? 0xFF1E293B : 0xFF1A0A0A);
+                tv.setPadding(28, 18, 28, 18);
+                GradientDrawable bubble = new GradientDrawable();
+                bubble.setColor(isUser ? 0x14FFFFFF : 0x1AEF4444);
+                bubble.setCornerRadius(36f);
+                bubble.setStroke(2, isUser ? 0x1EFFFFFF : 0x33EF4444);
+                tv.setBackground(bubble);
+                android.widget.AbsListView.LayoutParams mlp = new android.widget.AbsListView.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                tv.setLayoutParams(mlp);
                 return tv;
             }
         };
@@ -385,13 +393,13 @@ public class LeaAutoActivity extends AppCompatActivity {
         contentChat.setVisibility(tab == 2 ? View.VISIBLE : View.GONE);
         if (isAdmin) contentGodMode.setVisibility(tab == 3 ? View.VISIBLE : View.GONE);
 
-        int active = 0xFF1259C3, inactive = 0xFF1A1A1A;
-        tabDashboard.setBackgroundColor(tab == 0 ? active : inactive);
-        tabDiag.setBackgroundColor(tab == 1 ? active : inactive);
-        tabChat.setBackgroundColor(tab == 2 ? active : inactive);
-        if (isAdmin) tabGodMode.setBackgroundColor(tab == 3 ? active : inactive);
+        int activeBg = R.drawable.lea_auto_tab_active_bg, inactiveBg = R.drawable.lea_auto_tab_inactive_bg;
+        tabDashboard.setBackgroundResource(tab == 0 ? activeBg : inactiveBg);
+        tabDiag.setBackgroundResource(tab == 1 ? activeBg : inactiveBg);
+        tabChat.setBackgroundResource(tab == 2 ? activeBg : inactiveBg);
+        if (isAdmin) tabGodMode.setBackgroundResource(tab == 3 ? activeBg : inactiveBg);
 
-        int activeText = 0xFFFFFFFF, inactiveText = 0xFF94A3B8;
+        int activeText = 0xFFFFFFFF, inactiveText = 0xFF64748B;
         tabDashboard.setTextColor(tab == 0 ? activeText : inactiveText);
         tabDiag.setTextColor(tab == 1 ? activeText : inactiveText);
         tabChat.setTextColor(tab == 2 ? activeText : inactiveText);
@@ -539,6 +547,15 @@ public class LeaAutoActivity extends AppCompatActivity {
     }
 
     // ─── helpers ──────────────────────────────────────────────────
+
+    /** Fond de ligne arrondi translucide pour les items ArrayAdapter (device/DTC list). */
+    private GradientDrawable rowBg(int color) {
+        GradientDrawable gd = new GradientDrawable();
+        gd.setColor(color);
+        gd.setCornerRadius(28f);
+        return gd;
+    }
+
     private static class ChatMsg {
         final String sender, text;
         ChatMsg(String s, String t) { sender = s; text = t; }

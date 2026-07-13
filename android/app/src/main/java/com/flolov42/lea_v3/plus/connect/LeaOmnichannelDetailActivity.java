@@ -19,7 +19,10 @@ import com.flolov42.lea_v3.utilities.*;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
 import android.provider.Settings;
 import android.view.Gravity;
@@ -29,9 +32,9 @@ import java.util.List;
 
 public class LeaOmnichannelDetailActivity extends LeaFeatureDetailActivity {
 
-    private static final int BG    = 0xFF000D1A;
-    private static final int CARD  = 0xFF001A2E;
-    private static final int CARD2 = 0xFF00243F;
+    private static final int BG    = 0xFF020617;
+    private static final int CARD  = 0xFF0B1526;
+    private static final int CARD2 = 0xFF13243B;
     private static final int CYAN  = 0xFF00E5FF;
     private static final int GREEN = 0xFF10B981;
     private static final int PURPLE= 0xFF7C3AED;
@@ -100,7 +103,7 @@ public class LeaOmnichannelDetailActivity extends LeaFeatureDetailActivity {
         resultTv.setPadding(0, dp(6), 0, 0);
 
         Button cmdBtn = new Button(this); cmdBtn.setText("▶  ENVOYER");
-        cmdBtn.setTextColor(BG); cmdBtn.setBackgroundColor(CYAN);
+        cmdBtn.setTextColor(CYAN); styleActionBtn(cmdBtn, CYAN);
         cmdBtn.setTextSize(11); cmdBtn.setTypeface(null, Typeface.BOLD); cmdBtn.setAllCaps(false);
         LinearLayout.LayoutParams cbLp = new LinearLayout.LayoutParams(-1, dp(42));
         cbLp.setMargins(0, dp(8), 0, 0); cmdBtn.setLayoutParams(cbLp);
@@ -147,7 +150,7 @@ public class LeaOmnichannelDetailActivity extends LeaFeatureDetailActivity {
         }
 
         Button addDevBtn = new Button(this); addDevBtn.setText("➕  AJOUTER UN APPAREIL");
-        addDevBtn.setTextColor(CYAN); addDevBtn.setBackgroundColor(CARD2);
+        addDevBtn.setTextColor(CYAN); styleActionBtn(addDevBtn, CYAN);
         addDevBtn.setTextSize(10); addDevBtn.setTypeface(null, Typeface.BOLD); addDevBtn.setAllCaps(false);
         LinearLayout.LayoutParams adLp = new LinearLayout.LayoutParams(-1, dp(38));
         adLp.setMargins(0, dp(10), 0, 0); addDevBtn.setLayoutParams(adLp);
@@ -162,7 +165,13 @@ public class LeaOmnichannelDetailActivity extends LeaFeatureDetailActivity {
             LinearLayout notifBanner = new LinearLayout(this);
             notifBanner.setOrientation(LinearLayout.HORIZONTAL);
             notifBanner.setGravity(Gravity.CENTER_VERTICAL);
-            notifBanner.setBackgroundColor(0xFF1A0A00);
+            GradientDrawable notifBannerBg = new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                new int[]{ lighten(0xFF1A0A00, 0.06f), 0xFF1A0A00 });
+            notifBannerBg.setCornerRadius(dp(16));
+            notifBannerBg.setStroke(dp(1), ORANGE);
+            notifBanner.setElevation(dp(1));
+            notifBanner.setBackground(notifBannerBg);
             notifBanner.setPadding(dp(14), dp(10), dp(14), dp(10));
             LinearLayout.LayoutParams nbLp = new LinearLayout.LayoutParams(-1, -2);
             nbLp.setMargins(dp(12), dp(4), dp(12), 0); notifBanner.setLayoutParams(nbLp);
@@ -172,7 +181,7 @@ public class LeaOmnichannelDetailActivity extends LeaFeatureDetailActivity {
             nbTexts.addView(tv("Léa lira tes messages pour les unifier", 10, DIM2, Typeface.NORMAL));
             notifBanner.addView(nbTexts);
             Button activateBtn = new Button(this); activateBtn.setText("Activer");
-            activateBtn.setTextColor(ORANGE); activateBtn.setBackgroundColor(CARD2);
+            activateBtn.setTextColor(ORANGE); styleActionBtn(activateBtn, ORANGE);
             activateBtn.setTextSize(10); activateBtn.setTypeface(null, Typeface.BOLD); activateBtn.setAllCaps(false);
             activateBtn.setPadding(dp(10), dp(4), dp(10), dp(4));
             activateBtn.setLayoutParams(new LinearLayout.LayoutParams(-2, dp(32)));
@@ -224,7 +233,7 @@ public class LeaOmnichannelDetailActivity extends LeaFeatureDetailActivity {
             t.addView(tv(a[1], 12, WHITE, Typeface.BOLD));
             row.addView(t);
             Button btn = new Button(this); btn.setText(btnLabel);
-            btn.setTextColor(btnColor); btn.setBackgroundColor(CARD2);
+            btn.setTextColor(btnColor); styleActionBtn(btn, btnColor);
             btn.setTextSize(10); btn.setTypeface(null, Typeface.BOLD); btn.setAllCaps(false);
             btn.setPadding(dp(10), dp(4), dp(10), dp(4));
             btn.setLayoutParams(new LinearLayout.LayoutParams(-2, dp(30)));
@@ -285,7 +294,14 @@ public class LeaOmnichannelDetailActivity extends LeaFeatureDetailActivity {
 
     private LinearLayout card(int ml, int mt, int mr, int mb) {
         LinearLayout c = new LinearLayout(this); c.setOrientation(LinearLayout.VERTICAL);
-        c.setBackgroundColor(CARD); c.setPadding(dp(14), dp(12), dp(14), dp(12));
+        GradientDrawable gd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        gd.setCornerRadius(dp(18));
+        gd.setStroke(dp(1), GLASS_BORDER);
+        c.setElevation(dp(2));
+        c.setBackground(gd);
+        c.setPadding(dp(14), dp(12), dp(14), dp(12));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(ml, mt, mr, mb); c.setLayoutParams(lp); return c;
     }
@@ -297,5 +313,15 @@ public class LeaOmnichannelDetailActivity extends LeaFeatureDetailActivity {
     private void secHeader(LinearLayout p, String text) {
         TextView t = tv(text, 11, GOLD, Typeface.BOLD);
         t.setPadding(dp(16), dp(14), dp(16), dp(6)); p.addView(t);
+    }
+
+    /** Bouton d'action verre translucide + bordure accent + ripple (recette actionButton() de la base). */
+    private void styleActionBtn(Button btn, int color) {
+        GradientDrawable gd = new GradientDrawable();
+        gd.setColor((color & 0x00FFFFFF) | 0x22000000);
+        gd.setCornerRadius(dp(14));
+        gd.setStroke(dp(1), color);
+        btn.setBackground(new RippleDrawable(ColorStateList.valueOf((color & 0x00FFFFFF) | 0x55000000), gd, null));
+        btn.setElevation(dp(1));
     }
 }

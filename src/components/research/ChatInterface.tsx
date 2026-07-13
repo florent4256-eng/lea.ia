@@ -1,11 +1,12 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
+import { useConfirmToast } from '../../hooks/useConfirmToast';
 import {
-  MessageSquarePlus, Palette, History, Menu, Settings,
+  MessageSquarePlus, Palette, History, Menu, Settings, MoreVertical,
   ChevronRight, ChevronDown, Terminal, Heart, Lock,
   Activity, Globe, Car, ShieldCheck, ShieldAlert, LogOut, User, Coins, Home,
-  MapPin, Box, Bot, Star, Sparkles, Download, Zap, Map, Crown, Mic, Trash2, X, Film, Music, ShoppingBag, Brain
+  MapPin, Box, Bot, Star, Sparkles, Download, Zap, Map, Crown, Mic, Trash2, X, Film, Music, ShoppingBag, Brain, FileText, LayoutGrid
 } from 'lucide-react';
 
 // Modules chargés immédiatement (toujours utilisés)
@@ -15,9 +16,8 @@ import { LiveModeNative } from '../modules/LiveModeNative';
 // Modules chargés à la demande (lazy) — réduit le bundle initial
 const LeaAgent     = lazy(() => import('../modules/LeaAgent').then(m => ({ default: m.LeaAgent })));
 const LeaSettings  = lazy(() => import('../../features/LeaSettings').then(m => ({ default: m.LeaSettings })));
-const LeaUpdates   = lazy(() => import('../../features/LeaUpdates').then(m => ({ default: m.LeaUpdates })));
 const LeaChat      = lazy(() => import('../modules/LeaChat').then(m => ({ default: m.LeaChat })));
-const LeaLove      = lazy(() => import('../modules/LeaLove').then(m => ({ default: m.LeaLove })));
+const LeaEcosystem = lazy(() => import('../modules/LeaEcosystem').then(m => ({ default: m.LeaEcosystem })));
 const LeaProtect   = lazy(() => import('../modules/LeaProtect').then(m => ({ default: m.LeaProtect })));
 const LeaCrypto    = lazy(() => import('../modules/LeaCrypto').then(m => ({ default: m.LeaCrypto })));
 const Languages    = lazy(() => import('../modules/Languages').then(m => ({ default: m.Languages })));
@@ -25,8 +25,10 @@ const LeaAcademy   = lazy(() => import('../modules/LeaAcademy').then(m => ({ def
 const StudioNano   = lazy(() => import('../modules/StudioNano').then(m => ({ default: m.StudioNano })));
 const StudioLyria  = lazy(() => import('../modules/StudioLyria').then(m => ({ default: m.StudioLyria })));
 const StudioVeo    = lazy(() => import('../modules/StudioVeo').then(m => ({ default: m.StudioVeo })));
-const StudioForge3D = lazy(() => import('../modules/StudioForge3D').then(m => ({ default: m.StudioForge3D })));
-const LeaShop      = lazy(() => import('../modules/LeaShop').then(m => ({ default: m.LeaShop })));
+const StudioForge3D  = lazy(() => import('../modules/StudioForge3D').then(m => ({ default: m.StudioForge3D })));
+const StudioMontage  = lazy(() => import('../modules/StudioMontage').then(m => ({ default: m.StudioMontage })));
+const LeaShop        = lazy(() => import('../modules/LeaShop').then(m => ({ default: m.LeaShop })));
+const LeaUpdates     = lazy(() => import('../../features/LeaUpdates').then(m => ({ default: m.LeaUpdates })));
 
 import { registerPlugin } from '@capacitor/core';
 const LeaPhone = registerPlugin<any>('LeaPhone');
@@ -62,6 +64,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   activeModule, setActiveModule, isSidebarOpen, setSidebarOpen, status, children, isAdmin = false
 }) => {
   const { t, i18n } = useTranslation();
+  const { askConfirm, ConfirmToastHost } = useConfirmToast();
   const [showModules, setShowModules] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   let currentUser = '';
@@ -226,40 +229,41 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
   
   // --- [GOD-MODE] DÉCLENCHEMENT DE LA SIRÈNE ---
-  const triggerMaintenance = async () => {
-    const confirm = window.confirm("🚨 BOSS : Es-tu sûr de vouloir déclencher l'alerte de maintenance (15 min) sur tous les terminaux ?");
-    if (!confirm) return;
-
-    try {
-      await fetch('/api/system/maintenance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: currentUser, duration: 15 })
-      });
-    } catch (error) {
-      console.error("Liaison avec le Master interrompue");
-    }
+  const triggerMaintenance = () => {
+    askConfirm("🚨 BOSS : Es-tu sûr de vouloir déclencher l'alerte de maintenance (15 min) sur tous les terminaux ?", async () => {
+      try {
+        let token = ''; try { token = localStorage.getItem('lea_session_token') || ''; } catch (e) {}
+        await fetch('/api/system/maintenance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { 'x-lea-session': token } : {}) },
+          body: JSON.stringify({ username: currentUser, duration: 15 })
+        });
+      } catch (error) {
+        console.error("Liaison avec le Master interrompue");
+      }
+    });
   };
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-[#000814]">
-      
+      <ConfirmToastHost />
+
       {/* LA ZONE MAGIQUE A 80% + BLOCAGE ANTI-SAUT DE PAGE */}
-      <div 
+      <div
         className="absolute top-0 left-0 flex text-white transition-all duration-300"
         style={{
-          width: '125%', 
-          height: '125%',
-          transform: 'scale(0.80)',
+          width: activeModule === 'studio_montage' ? '100%' : '125%',
+          height: activeModule === 'studio_montage' ? '100%' : '125%',
+          transform: activeModule === 'studio_montage' ? 'none' : 'scale(0.80)',
           transformOrigin: 'top left'
         }}
       >
         
         {/* SIDEBAR */}
         <aside className={`
-          ${isSidebarOpen ? 'w-[320px]' : 'w-0'} 
+          ${isSidebarOpen && activeModule !== 'studio_montage' ? 'w-[320px]' : 'w-0'}
           transition-all duration-500 ease-in-out h-full
-          bg-gradient-to-b from-[#000b1e] to-[#000814] border-r border-[#00f2ff]/15 
+          bg-[#020617]/60 backdrop-blur-2xl border-r border-white/10
           flex flex-col overflow-hidden z-50 shadow-[5px_0_30px_rgba(0,0,0,0.5)] shrink-0
         `}>
           <div className="p-5 flex flex-col h-full min-w-[320px]">
@@ -271,7 +275,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     try { localStorage.setItem('lea_currentSession', newSession); } catch (e) {}
     setActiveModule('terminal');
   }}
-  className="group flex items-center gap-4 px-6 py-4 bg-[#00f2ff]/5 border border-[#00f2ff]/30 hover:border-[#00f2ff] rounded-2xl text-[#00f2ff] hover:bg-[#00f2ff]/15 transition-all duration-300 mb-4 shadow-[0_0_15px_rgba(0,242,255,0.1)]"
+  className="group flex items-center gap-4 px-6 py-4 bg-[#00ffff]/5 border border-[#00ffff]/20 rounded-2xl text-[#00ffff] hover:bg-[#00ffff]/20 hover:drop-shadow-[0_0_10px_rgba(0,255,255,0.5)] transition-all duration-300 mb-4"
 >
   <MessageSquarePlus size={22} className="group-hover:scale-110 transition-transform" /> 
   <span className="font-bold tracking-wide">{t('sidebar_new_chat')}</span>
@@ -356,18 +360,38 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   <p className="text-[10px] text-white/20 italic text-center py-2 px-6">Aucune mémoire trouvée</p>
                 ) : (
                   historySessions.map((session) => (
-                    <button
+                    <div
                       key={session.id}
+                      className="group/session relative flex items-center gap-1 pl-6 pr-2 py-2 rounded-lg hover:bg-[#00ffff]/15 transition-all cursor-pointer"
                       onClick={() => {
-                        // On stocke temporairement l'ID pour que LeaTerminal le récupère
                         try { localStorage.setItem('lea_currentSession', session.id); } catch (e) {}
                         setActiveModule('terminal');
                       }}
-                      className="w-full flex flex-col items-start px-8 py-2 text-left hover:bg-[#00f2ff]/10 rounded-lg group transition-colors"
                     >
-                      <span className="text-xs font-bold text-slate-300 group-hover:text-[#00f2ff] truncate w-full">{session.name}</span>
-                      <span className="text-[9px] text-slate-500 font-mono mt-0.5">{new Date(parseInt(session.id)).toLocaleDateString()}</span>
-                    </button>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold text-slate-300 group-hover/session:text-white truncate block">{session.name}</span>
+                        <span className="text-[9px] text-slate-500 font-mono mt-0.5 block">{new Date(parseInt(session.id)).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover/session:opacity-100 transition-all shrink-0">
+                        <button
+                          title="Favori"
+                          className="p-1 text-white/40 hover:text-yellow-400 hover:scale-110 transition-all"
+                          onClick={e => e.stopPropagation()}
+                        ><Star size={12} /></button>
+                        <button
+                          title="Supprimer"
+                          className="p-1 text-white/40 hover:text-red-500 hover:scale-110 transition-all"
+                          onClick={e => {
+                            e.stopPropagation();
+                            let token = ''; try { token = localStorage.getItem('lea_session_token') || ''; } catch {}
+                            fetch(`/api/history/${currentUser}/${session.id}`, {
+                              method: 'DELETE',
+                              headers: token ? { 'x-lea-session': token } : {}
+                            }).then(() => setHistorySessions(prev => prev.filter(s => s.id !== session.id)));
+                          }}
+                        ><Trash2 size={12} /></button>
+                      </div>
+                    </div>
                   ))
                 )}
               </div>
@@ -387,14 +411,29 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             {/* TERMINAL — bleu nuit galaxie */}
             <button
               onClick={() => setActiveModule('terminal')}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all font-black uppercase tracking-widest text-[11px] border hover:scale-[1.02] ${
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-all duration-300 border ${
                 activeModule === 'terminal'
-                  ? 'bg-[#0A1F3F] text-[#00f2ff] border-[#00f2ff]/60 shadow-[0_0_22px_rgba(0,242,255,0.30)]'
-                  : 'bg-[#0A1F3F]/80 text-[#00f2ff]/75 border-[#00f2ff]/25 hover:border-[#00f2ff]/55 hover:text-[#00f2ff] shadow-[0_0_12px_rgba(0,242,255,0.10)]'
+                  ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none'
+                  : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'
               }`}
             >
               <Terminal size={18} className="shrink-0" />
               <span>Léa Terminal</span>
+            </button>
+
+            {/* ÉCOSYSTÈME — liste des applications connectées au compte Léa (Léa Love, etc.) —
+                couleur volontairement voyante (dégradé violet/fuchsia + lueur), pour se
+                démarquer du reste de la sidebar et donner envie de cliquer dessus. */}
+            <button
+              onClick={() => setActiveModule('ecosystem')}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg font-bold transition-all duration-300 border shadow-[0_0_15px_rgba(168,85,247,0.35)] hover:scale-[1.02] ${
+                activeModule === 'ecosystem'
+                  ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 border-transparent text-white'
+                  : 'bg-gradient-to-r from-purple-600/20 to-fuchsia-600/20 border-purple-500/40 text-purple-300 hover:from-purple-600 hover:to-fuchsia-600 hover:text-white hover:border-transparent'
+              }`}
+            >
+              <LayoutGrid size={18} className="shrink-0" />
+              <span>Écosystème Léa</span>
             </button>
 
           </div>
@@ -450,7 +489,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <div className="mb-4">
                 <button
                   onClick={async () => {
-                    try { await LeaPhone.openMaps(); } catch (e) { console.error('Erreur Maps', e); }
+                    try { await LeaPhone.openMaps({ currentUser }); } catch (e) { console.error('Erreur Maps', e); }
                   }}
                   className="w-full flex items-center gap-3 p-3 rounded-xl transition-all font-black uppercase tracking-widest text-[11px] border shadow-[0_0_18px_rgba(34,197,94,0.25)] bg-green-500/8 hover:bg-green-500/20 hover:scale-[1.02] border-green-500/35 hover:border-green-500/70 text-green-400 hover:text-white"
                 >
@@ -465,12 +504,36 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   onClick={async () => {
                     let currentUser = '';
                     try { currentUser = localStorage.getItem('lea_currentUser') || ''; } catch (e) {}
-                    try { await LeaPhone.openAuto({ currentUser }); } catch (e) { console.error('Erreur Auto', e); }
+                    try {
+                      // openAuto ouvre l'Activity native Android; await garantit
+                      // que l'activité est terminée avant de continuer.
+                      // closeAuto() dans le finally assure la fermeture BT
+                      // même en cas de crash ou retour brutal.
+                      await LeaPhone.openAuto({ currentUser });
+                    } catch (e) {
+                      console.error('Erreur Auto', e);
+                    } finally {
+                      // Fermeture hermétique du socket Bluetooth OBD2
+                      try { await LeaPhone.closeAuto(); } catch {}
+                    }
                   }}
                   className="w-full flex items-center gap-3 p-3 rounded-xl transition-all font-black uppercase tracking-widest text-[11px] border shadow-[0_0_18px_rgba(239,68,68,0.25)] bg-red-500/8 hover:bg-red-500/20 hover:scale-[1.02] border-red-500/35 hover:border-red-500/70 text-red-400 hover:text-white"
                 >
                   <Car size={18} className="shrink-0" />
                   <span>Léa Auto 🚗</span>
+                </button>
+              </div>
+
+              {/* 📝 LÉA OFFICE — Traitement de texte IA natif */}
+              <div className="mb-4">
+                <button
+                  onClick={async () => {
+                    try { await LeaPhone.openOffice(); } catch (e) { console.error('Erreur Office', e); }
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl transition-all font-black uppercase tracking-widest text-[11px] border shadow-[0_0_18px_rgba(0,229,255,0.25)] bg-[#00E5FF]/8 hover:bg-[#00E5FF]/20 hover:scale-[1.02] border-[#00E5FF]/35 hover:border-[#00E5FF]/70 text-[#00E5FF] hover:text-white"
+                >
+                  <FileText size={18} className="shrink-0" />
+                  <span>Léa Office 📝</span>
                 </button>
               </div>
             </>
@@ -483,7 +546,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <div className="mb-4">
                 <button
                   onClick={() => setActiveModule('agent')}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all font-black uppercase tracking-widest text-[11px] border hover:scale-[1.02] ${activeModule === 'agent' ? 'bg-fuchsia-600 border-fuchsia-500 text-white shadow-[0_0_18px_rgba(192,38,211,0.5)]' : 'shadow-[0_0_18px_rgba(192,38,211,0.35)] bg-fuchsia-600/10 hover:bg-fuchsia-600 border-fuchsia-500/40 text-fuchsia-400 hover:text-white'}`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-all duration-300 border ${activeModule === 'agent' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}
                 >
                   <Brain size={18} className="shrink-0" />
                   <span>Léa Agent Dev</span>
@@ -493,7 +556,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <div className="mb-4">
                 <button
                   onClick={triggerMaintenance}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-red-600/10 hover:bg-red-600 border border-red-500/50 text-red-500 hover:text-white transition-all font-black uppercase tracking-widest text-[11px] shadow-[0_0_20px_rgba(239,68,68,0.2)]"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg bg-red-500/5 hover:bg-red-500/20 border border-red-500/20 text-red-400 hover:drop-shadow-[0_0_10px_rgba(239,68,68,0.5)] transition-all duration-300"
                 >
                   <ShieldAlert size={18} className="shrink-0" />
                   <span>Alerte Maintenance</span>
@@ -528,8 +591,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <ChevronDown size={14} className="group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pl-3 mt-1 space-y-1 border-l border-white/10 ml-3">
-              <button onClick={() => setActiveModule('chat')} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'chat' ? 'bg-[#0047ff]/20 text-[#00f2ff]' : 'text-slate-400 hover:text-white'}`}><MessageSquarePlus size={16} /> Léa Chat</button>
-              <button onClick={() => setActiveModule('languages')} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'languages' ? 'bg-[#0047ff]/20 text-[#00f2ff]' : 'text-slate-400 hover:text-white'}`}><Globe size={16} /> Léa Langues</button>
+              <button onClick={() => setActiveModule('chat')} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'chat' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}><MessageSquarePlus size={16} /> Léa Chat</button>
+              <button onClick={() => setActiveModule('languages')} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'languages' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}><Globe size={16} /> Léa Langues</button>
             </div>
           </details>
 
@@ -540,11 +603,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <ChevronDown size={14} className="group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pl-3 mt-1 space-y-1 border-l border-white/10 ml-3">
-              <button onClick={() => setActiveModule('academy')} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'academy' ? 'bg-[#0047ff]/20 text-[#00f2ff]' : 'text-slate-400 hover:text-white'}`}><Bot size={16} /> Léa Academy</button>
-              <button
-                onClick={() => setActiveModule('office')}
-                className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'office' ? 'bg-[#0047ff]/20 text-[#00f2ff]' : 'text-slate-400 hover:text-white'}`}
-              ><Box size={16} /> Léa Office</button>
+              <button onClick={() => setActiveModule('academy')} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'academy' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}><Bot size={16} /> Léa Academy</button>
             </div>
           </details>
 
@@ -555,8 +614,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <ChevronDown size={14} className="group-open:rotate-180 transition-transform" />
             </summary>
             <div className="pl-3 mt-1 space-y-1 border-l border-white/10 ml-3">
-              <button onClick={() => setActiveModule('protect')} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'protect' ? 'bg-red-500/20 text-red-400' : 'text-slate-400 hover:text-white'}`}><ShieldCheck size={16} /> Léa Protect</button>
-              <button onClick={() => setActiveModule('crypto')} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'crypto' ? 'bg-[#0047ff]/20 text-yellow-400' : 'text-slate-400 hover:text-white'}`}><Coins size={16} /> Léa Crypto</button>
+              <button onClick={() => setActiveModule('protect')} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'protect' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}><ShieldCheck size={16} /> Léa Protect</button>
+              <button onClick={() => setActiveModule('crypto')} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all text-sm ${activeModule === 'crypto' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}><Coins size={16} /> Léa Crypto</button>
             </div>
           </details>
 
@@ -564,7 +623,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div className="mb-1">
             <button
               onClick={() => setActiveModule('studio_nano')}
-              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all outline-none ${activeModule === 'studio_nano' ? 'bg-[#00f2ff]/20 text-[#00f2ff]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all outline-none ${activeModule === 'studio_nano' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}
             >
               <Palette size={16} className={activeModule === 'studio_nano' ? 'text-[#00f2ff]' : 'text-slate-400'} />
               <span className="text-[10px] font-bold tracking-widest uppercase">Studio Nano</span>
@@ -585,7 +644,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   setActiveModule('studio_forge');
                 }
               }}
-              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all outline-none ${activeModule === 'studio_forge' ? 'bg-cyan-500/20 text-cyan-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all outline-none ${activeModule === 'studio_forge' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}
             >
               <Box size={16} className={activeModule === 'studio_forge' ? 'text-cyan-400' : 'text-slate-400'} />
               <span className="text-[10px] font-bold tracking-widest uppercase">Forge 3D</span>
@@ -593,7 +652,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
             <button
               onClick={() => setActiveModule('studio_veo')}
-              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all outline-none ${activeModule === 'studio_veo' ? 'bg-purple-500/20 text-purple-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all outline-none ${activeModule === 'studio_veo' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}
             >
               <Film size={16} className={activeModule === 'studio_veo' ? 'text-purple-400' : 'text-slate-400'} />
               <span className="text-[10px] font-bold tracking-widest uppercase">Studio Veo</span>
@@ -601,10 +660,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
             <button
               onClick={() => setActiveModule('studio_lyria')}
-              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all outline-none ${activeModule === 'studio_lyria' ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all outline-none ${activeModule === 'studio_lyria' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}
             >
               <Music size={16} className={activeModule === 'studio_lyria' ? 'text-fuchsia-400' : 'text-slate-400'} />
               <span className="text-[10px] font-bold tracking-widest uppercase">Studio Lyria</span>
+            </button>
+
+            <button
+              onClick={() => setActiveModule('studio_montage')}
+              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all outline-none ${activeModule === 'studio_montage' ? 'border-l-2 border-[#00ffff] border-r-0 border-t-0 border-b-0 bg-gradient-to-r from-[#00ffff]/10 to-transparent text-[#00ffff] rounded-l-none' : 'text-white/60 bg-transparent border-transparent hover:text-white hover:bg-white/5 hover:border-white/10'}`}
+            >
+              <Film size={16} className={activeModule === 'studio_montage' ? 'text-pink-400' : 'text-slate-400'} />
+              <span className="text-[10px] font-bold tracking-widest uppercase">Studio Montage</span>
             </button>
           </div>
 
@@ -616,13 +683,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               
               <button
                 onClick={() => setActiveModule('shop')}
-                className="w-full flex items-center justify-between px-4 py-3 bg-[#00f2ff]/5 hover:bg-[#00f2ff]/15 border border-[#00f2ff]/20 rounded-xl transition-all mb-1 group"
+                style={{ backgroundImage: 'none' }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-[8px] bg-transparent border border-[#00ffff]/30 text-[#00ffff] transition-all hover:bg-[#00ffff]/10 hover:drop-shadow-[0_0_12px_rgba(0,255,255,0.6)]"
               >
-                <div className="flex items-center gap-2">
-                  <Coins size={16} className="text-[#00f2ff] group-hover:rotate-12 transition-transform" />
-                  <span className="font-bold text-[#00f2ff] text-xs uppercase tracking-wider">{t('sidebar_tokens')}</span>
-                </div>
-                <span className="font-mono font-black text-white text-sm">{userTokens}</span>
+                <Coins size={15} />
+                <span className="font-bold text-xs uppercase tracking-wider flex-1 text-left">{t('sidebar_tokens')}</span>
+                <span className="font-mono font-black text-sm">{userTokens}</span>
               </button>
 
               {showSettings && (
@@ -647,14 +713,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       <Settings size={16} /> {t('settings_general')}
                     </button>
                     <button
-                      onClick={() => {
-                        setShowSettings(false);
-                        if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
-                          LeaPhone.openUpdates().catch(() => {});
-                        } else {
-                          setActiveModule('updates');
-                        }
-                      }}
+                      onClick={() => { setShowSettings(false); setActiveModule('updates'); }}
                       className="w-full flex items-center gap-2 px-3 py-2 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg text-sm transition-colors"
                     >
                       <Download size={16} /> {t('settings_updates', 'Mises à jour')}
@@ -671,13 +730,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
               <button
                 onClick={() => setActiveModule('shop')}
-                className={`w-full flex items-center justify-between px-4 py-2.5 border rounded-xl transition-all ${activeModule === 'shop' ? 'bg-yellow-500/30 border-yellow-500 text-yellow-300' : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500/60'}`}
+                style={{ backgroundImage: 'none' }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-[8px] bg-transparent border border-yellow-500/30 text-yellow-500 transition-all hover:bg-yellow-500/10 hover:drop-shadow-[0_0_12px_rgba(234,179,8,0.6)]"
               >
-                <div className="flex items-center gap-2">
-                  <ShoppingBag size={15} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Shop · Tokens & Abos</span>
-                </div>
-                <span className="text-[9px] text-yellow-500/70 font-bold">🪙</span>
+                <ShoppingBag size={15} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Shop · Tokens & Abos</span>
               </button>
 
               <button
@@ -693,8 +750,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
         {/* ZONE CENTRALE - AVEC RENDU OPÉRATIONNEL DES MODULES */}
         <main className="flex-1 flex flex-col relative overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#001233] via-[#000814] to-[#000814]">
-          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="absolute top-6 left-6 p-3 hover:bg-[#00f2ff]/10 rounded-xl z-50 group transition-all">
-            <Menu size={24} className="text-white group-hover:text-[#00f2ff]" />
+          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="absolute top-6 left-6 p-3 rounded-xl z-50 transition-all duration-300 text-white/60 hover:text-[#00ffff] hover:scale-110 hover:drop-shadow-[0_0_12px_rgba(0,255,255,1)]">
+            <MoreVertical size={22} />
           </button>
 
 
@@ -702,21 +759,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <ErrorBoundary>
             <Suspense fallback={<LazyFallback />}>
               {activeModule === 'settings' && <LeaSettings />}
-              {activeModule === 'updates' && <LeaUpdates />}
               {activeModule === 'terminal' && <LeaTerminal />}
               {activeModule === 'chat' && <LeaChat />}
               {activeModule === 'agent' && <LeaAgent />}
-              {activeModule === 'love' && <LeaLove />}
+              {activeModule === 'ecosystem' && <LeaEcosystem />}
               {activeModule === 'protect' && <LeaProtect />}
               {activeModule === 'crypto' && <LeaCrypto />}
               {activeModule === 'shop' && <LeaShop />}
+              {activeModule === 'updates' && <LeaUpdates />}
               {activeModule === 'live' && <LiveModeNative />}
-              {activeModule === 'maps' && (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
-                  <MapPin size={48} className="opacity-30" />
-                  <p className="text-sm">Léa Maps est disponible uniquement sur Android.</p>
-                </div>
-              )}
               {activeModule === 'languages' && <Languages />}
               {activeModule === 'auto' && (
                 <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
@@ -725,6 +776,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
               )}
               {activeModule === 'academy' && <LeaAcademy />}
+              {activeModule === 'office' && (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
+                  <FileText size={48} className="opacity-30" />
+                  <p className="text-sm">Léa Office est disponible uniquement sur Android.</p>
+                </div>
+              )}
               {activeModule === 'home' && (
                 <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
                   <Home size={48} className="opacity-30" />
@@ -735,6 +792,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               {activeModule === 'studio_lyria' && <StudioLyria />}
               {activeModule === 'studio_veo' && <StudioVeo />}
               {activeModule === 'studio_forge' && <StudioForge3D />}
+              {activeModule === 'studio_montage' && <StudioMontage onClose={() => setActiveModule('terminal')} />}
             </Suspense>
             </ErrorBoundary>
           </div>

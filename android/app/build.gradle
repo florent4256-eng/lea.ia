@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 // Lecture des credentials de signature depuis keystore.properties (jamais committé)
 def keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -15,8 +16,8 @@ android {
         applicationId "com.flolov42.lea_v3"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 137
-        versionName "3.3.9"
+        versionCode 192
+        versionName "4.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
@@ -55,9 +56,6 @@ android {
     buildFeatures {
         compose true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.14'
-    }
 
     kotlinOptions {
         jvmTarget = '21'
@@ -85,7 +83,10 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
     implementation 'net.java.dev.jna:jna:5.14.0@aar'
-    implementation ('com.alphacephei:vosk-android:+') {
+    // Version figée (2026-07-12) — était "+" (dernière version), résolvait déjà vers 0.3.75.
+    // Pinné à cette version exacte pour éviter qu'un futur build casse silencieusement
+    // si une nouvelle version sort avec une API modifiée.
+    implementation ('com.alphacephei:vosk-android:0.3.75') {
         exclude group: 'net.java.dev.jna', module: 'jna'
     }
     implementation 'org.java-websocket:Java-WebSocket:1.5.3'
@@ -96,7 +97,10 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth-base:18.0.10'
     implementation 'com.google.android.gms:play-services-location:21.0.1'
 
-    // ── LÉA MAPS — OSMDroid (carte OpenStreetMap, zéro clé API) ───────────────
+    // ── LÉA MAPS — MapLibre Native (carte vectorielle 3D, OpenFreeMap, zéro clé API) ──
+    implementation 'org.maplibre.gl:android-sdk:11.0.0'
+
+    // ── LÉA ROUTINES — OSMDroid (utilisé par LeaLocationPickerActivity, hors périmètre) ──
     implementation 'org.osmdroid:osmdroid-android:6.1.18'
 
     // ── LÉA HOME — HTTP + JSON ─────────────────────────────────────────────────
@@ -126,7 +130,7 @@ dependencies {
     implementation 'io.github.sceneview:sceneview:2.2.1'
 
     // ── KOTLIN ─────────────────────────────────────────────────────────────────
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
 }
 
 apply from: 'capacitor.build.gradle'

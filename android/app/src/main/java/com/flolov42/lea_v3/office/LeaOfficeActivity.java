@@ -89,8 +89,11 @@ public class LeaOfficeActivity extends AppCompatActivity {
     @Override
     @SuppressLint("SetJavaScriptEnabled")
     protected void onCreate(Bundle savedInstanceState) {
+        try {
         super.onCreate(savedInstanceState);
-        LeaFeatureDetailActivity.applyImmersive(this);
+        // applyImmersive() appelé uniquement depuis onWindowFocusChanged (plus bas) — l'appeler
+        // ici, avant setContentView, plantait sur certains appareils (fenêtre pas encore prête
+        // pour getInsetsController()). Même pattern que les autres écrans natifs du projet.
         setContentView(R.layout.activity_office);
 
         httpClient = new OkHttpClient.Builder()
@@ -106,6 +109,15 @@ public class LeaOfficeActivity extends AppCompatActivity {
         setupListeners();
         loadDocumentList();
         showListScreen();
+        } catch (Throwable e) {
+            String loc = "";
+            for (StackTraceElement el : e.getStackTrace()) {
+                if (el.getClassName().contains("lea_v3")) { loc = el.getFileName() + ":" + el.getLineNumber(); break; }
+            }
+            Toast.makeText(this, "❌ Office: " + e.getMessage() + "\n@ " + loc, Toast.LENGTH_LONG).show();
+            com.flolov42.lea_v3.utilities.LeaAndroidLogger.crash(this, "Office onCreate", e);
+            finish();
+        }
     }
 
     // ── Bind ──────────────────────────────────────────────────────

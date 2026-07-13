@@ -16,6 +16,16 @@ Crée un compte, télécharge l'APK, et c'est parti.
 
 ---
 
+## Aperçu
+
+<p align="center">
+  <img src="docs/images/lea-1.jpg" width="30%" alt="Léa — application mobile" />
+  <img src="docs/images/lea-2.jpg" width="30%" alt="Léa — application mobile" />
+  <img src="docs/images/lea-3.jpg" width="30%" alt="Léa — application mobile" />
+</p>
+
+---
+
 ## Modules disponibles
 
 | Module | Description | Statut |
@@ -51,6 +61,26 @@ Léa est disponible en application Android native.
 3. Commence à utiliser Léa directement
 
 **Compte gratuit** : accès à l'ensemble des modules. Des tokens sont disponibles à l'achat pour les générations avancées (images, vidéos, musique).
+
+---
+
+## Écosystème Léa
+
+Léa n'est pas qu'un assistant seul — c'est le cœur d'un écosystème d'applications connectées, toutes bâties sur la même infrastructure locale.
+
+### Léa Love
+
+Une application de rencontre à part entière, connectée à Léa (même compte, même identité). Léa y modère les messages, vérifie les profils, et peut même discuter avec toi de tes conversations.
+
+<p align="center">
+  <img src="docs/images/lealove-1.jpg" width="30%" alt="Léa Love — découverte" />
+  <img src="docs/images/lealove-3.jpg" width="30%" alt="Léa Love — profil" />
+  <img src="docs/images/lealove-5.jpg" width="30%" alt="Léa Love — chat" />
+</p>
+
+### Léa Vitrine
+
+La page de présentation publique du projet : 🌐 [lea-vitrine.lea-ia-local.com](https://lea-vitrine.lea-ia-local.com)
 
 ---
 

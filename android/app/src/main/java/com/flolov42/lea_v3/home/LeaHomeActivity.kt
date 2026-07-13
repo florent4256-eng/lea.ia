@@ -57,7 +57,8 @@ class LeaHomeActivity : AppCompatActivity() {
                 LeaHomeRoot(
                     vm         = viewModel,
                     onSettings = { openSettings() },
-                    onMicPress = { handleMicPress() }
+                    onMicPress = { handleMicPress() },
+                    onBack     = { finish() }
                 )
             }
         }
@@ -141,7 +142,8 @@ class LeaHomeActivity : AppCompatActivity() {
 fun LeaHomeRoot(
     vm: HomeViewModel,
     onSettings: () -> Unit,
-    onMicPress: () -> Unit
+    onMicPress: () -> Unit,
+    onBack: () -> Unit = {}
 ) {
     val devices          by vm.devices.collectAsState()
     val rooms            by vm.rooms.collectAsState()
@@ -183,7 +185,8 @@ fun LeaHomeRoot(
         onSetTemperature = { device, temp -> vm.setTemperature(device, temp) },
         onCoverOpen      = { vm.openCover(it) },
         onCoverClose     = { vm.closeCover(it) },
-        onCoverStop      = { vm.stopCover(it) }
+        onCoverStop      = { vm.stopCover(it) },
+        onBack           = onBack
     )
 
     longPressDevice?.let { d ->

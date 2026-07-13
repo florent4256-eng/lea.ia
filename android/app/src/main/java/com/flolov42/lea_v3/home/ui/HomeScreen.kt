@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.draw.clip
@@ -81,7 +82,8 @@ fun HomeScreen(
     onSetTemperature: (SmartDevice, Float) -> Unit,
     onCoverOpen: (SmartDevice) -> Unit,
     onCoverClose: (SmartDevice) -> Unit,
-    onCoverStop: (SmartDevice) -> Unit
+    onCoverStop: (SmartDevice) -> Unit,
+    onBack: () -> Unit = {}
 ) {
     var activeTab   by remember { mutableStateOf<LscTab>(LscTab.Devices) }
     var showAddFlow by remember { mutableStateOf(false) }
@@ -101,7 +103,8 @@ fun HomeScreen(
                 uiState     = uiState,
                 wsConnected = wsConnected,
                 onSettings  = onSettings,
-                onRefresh   = onRefresh
+                onRefresh   = onRefresh,
+                onBack      = onBack
             )
 
             Box(modifier = Modifier.weight(1f)) {
@@ -189,7 +192,8 @@ fun LscTopBar(
     uiState: HomeUiState,
     wsConnected: Boolean,
     onSettings: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onBack: () -> Unit = {}
 ) {
     val refreshAnim = rememberInfiniteTransition(label = "refresh")
     val refreshRot  by refreshAnim.animateFloat(
@@ -209,9 +213,26 @@ fun LscTopBar(
                     )
                 )
             )
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = 12.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.08f))
+                .border(1.dp, Color.White.copy(alpha = 0.14f), CircleShape)
+                .clickable(onClick = onBack),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Filled.ArrowBack,
+                contentDescription = "Retour",
+                tint = HomeColors.Cyan,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 "Mes appareils",

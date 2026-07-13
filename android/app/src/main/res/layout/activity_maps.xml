@@ -4,12 +4,24 @@
     android:layout_height="match_parent"
     android:background="#0A0A0A">
 
-    <!-- Carte OSMDroid (fond plein écran) -->
-    <org.osmdroid.views.MapView
+    <!-- Carte MapLibre Native (fond plein écran, tuiles vectorielles OpenFreeMap) -->
+    <org.maplibre.android.maps.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clickable="true" />
+
+    <!-- Calque nuit — superposition, jamais de filtre CSS/GL sur la carte elle-même
+         (leçon apprise sur la version web : un filtre posé directement sur le rendu GL
+         casse le rendu sur certains GPU). Toujours au-dessus de la carte, sous le reste de l'UI. -->
+    <View
+        android:id="@+id/nightOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#B0020617"
+        android:visibility="gone"
+        android:clickable="false"
+        android:focusable="false" />
 
     <!-- ══════════════════════════════════════════════════════════════
          TOP BAR (visible hors navigation)
@@ -168,10 +180,11 @@
             android:layout_height="48dp"
             android:text="⊕"
             android:textSize="22sp"
-            android:textColor="#60A5FA"
-            android:background="#CC111111"
+            android:textColor="#7DD3FC"
+            android:background="@drawable/lea_map_btn_bg"
             android:padding="0dp"
-            android:layout_marginBottom="8dp" />
+            android:elevation="4dp"
+            android:layout_marginBottom="10dp" />
 
         <Button
             android:id="@+id/btnStyleCycle"
@@ -179,10 +192,24 @@
             android:layout_height="48dp"
             android:text="⊞"
             android:textSize="20sp"
-            android:textColor="#94A3B8"
-            android:background="#CC111111"
+            android:textColor="#93C5FD"
+            android:background="@drawable/lea_map_btn_bg"
             android:padding="0dp"
-            android:layout_marginBottom="8dp" />
+            android:elevation="4dp"
+            android:layout_marginBottom="10dp" />
+
+        <Button
+            android:id="@+id/btn3D"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:text="3D"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#93C5FD"
+            android:background="@drawable/lea_map_btn_bg"
+            android:padding="0dp"
+            android:elevation="4dp"
+            android:layout_marginBottom="10dp" />
 
         <Button
             android:id="@+id/btnZoomIn"
@@ -191,9 +218,10 @@
             android:text="+"
             android:textSize="22sp"
             android:textColor="#FFFFFF"
-            android:background="#CC111111"
+            android:background="@drawable/lea_map_btn_bg"
             android:padding="0dp"
-            android:layout_marginBottom="4dp" />
+            android:elevation="4dp"
+            android:layout_marginBottom="6dp" />
 
         <Button
             android:id="@+id/btnZoomOut"
@@ -202,31 +230,24 @@
             android:text="−"
             android:textSize="22sp"
             android:textColor="#FFFFFF"
-            android:background="#CC111111"
-            android:padding="0dp" />
-    </LinearLayout>
-
-    <!-- SOS (coin haut droit) -->
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/mapsTopBar"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="12dp">
+            android:background="@drawable/lea_map_btn_bg"
+            android:padding="0dp"
+            android:elevation="4dp" />
 
         <Button
             android:id="@+id/btnSOS"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:text="SOS"
             android:textSize="10sp"
             android:textColor="#FFFFFF"
             android:textStyle="bold"
-            android:background="#CC7F1D1D"
-            android:padding="0dp" />
+            android:background="@drawable/lea_map_btn_sos_bg"
+            android:elevation="4dp"
+            android:padding="0dp"
+            android:layout_marginTop="14dp" />
     </LinearLayout>
+
 
     <!-- ══════════════════════════════════════════════════════════════
          WAZE — PANNEAU ITINÉRAIRE (style bottom sheet)
@@ -465,6 +486,7 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/navSummaryDistUnit"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="km"
@@ -530,7 +552,7 @@
             android:id="@+id/routeHelpText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Entrez une destination puis appuyez sur Chercher"
+            android:text="Entrez une destination, ou appuyez longuement sur la carte pour poser des repères"
             android:textColor="#64748B"
             android:textSize="12sp"
             android:gravity="center"
@@ -707,6 +729,43 @@
             android:textSize="13sp"
             android:background="#1E293B" />
     </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         Signalement communautaire (façon Waze) — bouton flottant + menu
+    ═══════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/reportMenu"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottomBar"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone">
+
+        <Button android:id="@+id/reportAccident" android:layout_width="150dp" android:layout_height="44dp" android:layout_marginBottom="7dp" android:text="💥  Accident" android:textSize="13sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/lea_map_pill_bg" android:backgroundTint="#EF4444" android:elevation="3dp" />
+        <Button android:id="@+id/reportRadar"     android:layout_width="150dp" android:layout_height="44dp" android:layout_marginBottom="7dp" android:text="📷  Radar"    android:textSize="13sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/lea_map_pill_bg" android:backgroundTint="#F97316" android:elevation="3dp" />
+        <Button android:id="@+id/reportBouchon"   android:layout_width="150dp" android:layout_height="44dp" android:layout_marginBottom="7dp" android:text="🚦  Bouchon"  android:textSize="13sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/lea_map_pill_bg" android:backgroundTint="#EAB308" android:elevation="3dp" />
+        <Button android:id="@+id/reportObstacle"  android:layout_width="150dp" android:layout_height="44dp" android:layout_marginBottom="7dp" android:text="⚠️  Obstacle" android:textSize="13sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/lea_map_pill_bg" android:backgroundTint="#A855F7" android:elevation="3dp" />
+        <Button android:id="@+id/reportControle"  android:layout_width="150dp" android:layout_height="44dp" android:layout_marginBottom="7dp" android:text="👮  Contrôle" android:textSize="13sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/lea_map_pill_bg" android:backgroundTint="#3B82F6" android:elevation="3dp" />
+        <Button android:id="@+id/reportTravaux"   android:layout_width="150dp" android:layout_height="44dp" android:text="🚧  Travaux"  android:textSize="13sp" android:textStyle="bold" android:textColor="#FFFFFF" android:background="@drawable/lea_map_pill_bg" android:backgroundTint="#F59E0B" android:elevation="3dp" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnReportToggle"
+        android:layout_width="58dp"
+        android:layout_height="58dp"
+        android:layout_above="@id/bottomBar"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="14dp"
+        android:text="⚠"
+        android:textSize="24sp"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/lea_map_fab_report_bg"
+        android:elevation="6dp"
+        android:padding="0dp" />
 
     <!-- ══════════════════════════════════════════════════════════════
          Bottom Tab Bar (visible hors navigation)

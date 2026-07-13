@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChatInterface } from './components/research/ChatInterface';
 import { ShieldAlert } from 'lucide-react';
 import { LeaAuth } from './components/modules/LeaAuth';
+import { setLeaIdentity } from './main';
 
 export default function App() {
   const [activeModule, setActiveModule] = useState('terminal');
@@ -23,36 +24,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [maintenanceAlert]);
 
-  // Vérification de mise à jour au démarrage (une fois par jour)
-  useEffect(() => {
-    if (!currentUser) return;
-    let lastCheck: string | null = null;
-    try { lastCheck = localStorage.getItem('lea_last_update_check'); } catch (e) {}
-    const today = new Date().toISOString().slice(0, 10);
-    if (lastCheck === today) return;
-    try { localStorage.setItem('lea_last_update_check', today); } catch (e) {}
-
-    fetch('/api/app/version')
-      .then(res => res.json())
-      .then((data) => {
-        let installedVersion = '1.0';
-        try { installedVersion = localStorage.getItem('lea_installed_version') || '1.0'; } catch (e) {}
-        const latest = data.latestVersion;
-        const isNewer = latest.split('.').reduce((newer: boolean, part: string, i: number, arr: string[]) => {
-          if (newer !== null) return newer;
-          const r = parseInt(part) || 0;
-          const ins = parseInt((installedVersion.split('.')[i]) || '0') || 0;
-          if (r > ins) return true;
-          if (r < ins) return false;
-          return i === arr.length - 1 ? false : null as any;
-        }, null as any);
-        if (isNewer) {
-          const mandatoryUpdate = data.updates?.find((u: any) => u.version === latest && u.mandatory);
-          if (mandatoryUpdate) setActiveModule('updates');
-        }
-      })
-      .catch(() => {});
-  }, [currentUser]);
 
   // WebSocket maintenance
   useEffect(() => {
@@ -90,6 +61,10 @@ export default function App() {
     try { savedUser = localStorage.getItem('lea_currentUser'); } catch (e) {}
     if (savedUser) {
       setCurrentUser(savedUser);
+      // Resynchronise les SharedPreferences Android à chaque démarrage de l'app
+      // afin que getBossIdentity() (LeaNovaService) retrouve le bon utilisateur même
+      // après un clear data, une réinstall ou un redémarrage du téléphone.
+      setLeaIdentity(savedUser);
       fetch(`/api/system/is-admin?u=${encodeURIComponent(savedUser)}`)
         .then(r => r.json())
         .then(d => { if (d.isAdmin) setIsAdmin(true); })
@@ -99,14 +74,28 @@ export default function App() {
 
   const handleSearchExecution = useCallback(async (query: string, mode: 'search' | 'research') => {
     setSessionStatus('processing');
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newEntry = { id: Date.now(), query, timestamp: new Date().toLocaleTimeString() };
-        setSearchHistory(prev => [newEntry, ...prev]);
-        setSessionStatus('online');
-        resolve("Traitement local achevé.");
-      }, 800);
-    });
+    try {
+      const serverUrl = (window as any).LEA_SERVER_URL || '';
+      let token = ''; try { token = localStorage.getItem('lea_session_token') || ''; } catch {}
+      let user = ''; try { user = localStorage.getItem('lea_currentUser') || ''; } catch {}
+      const resp = await fetch(`${serverUrl}/api/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'x-lea-session': token } : {}),
+        },
+        body: JSON.stringify({ query, mode, username: user }),
+      });
+      const data = await resp.json();
+      const entry = data.entry ?? { id: Date.now(), query, timestamp: new Date().toLocaleTimeString() };
+      setSearchHistory(prev => [entry, ...prev]);
+      return data.result ?? null;
+    } catch {
+      setSearchHistory(prev => [{ id: Date.now(), query, timestamp: new Date().toLocaleTimeString() }, ...prev]);
+      return null;
+    } finally {
+      setSessionStatus('online');
+    }
   }, []);
 
   const handleLogin = (pseudo: string) => {

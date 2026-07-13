@@ -5,8 +5,10 @@ import {
   Focus, Cpu, Activity, Maximize, Scan, Wand2,
   Lightbulb, Power, MonitorPlay, Fingerprint, Lock, Loader2
 } from 'lucide-react';
+import { useConfirmToast } from '../../hooks/useConfirmToast';
 
 export const LiveMode = () => {
+  const { askConfirm, showToast, ConfirmToastHost } = useConfirmToast();
   const currentUser = localStorage.getItem('lea_currentUser') || '';
   const [socket, setSocket] = useState<WebSocket | null>(null);
 
@@ -46,7 +48,7 @@ export const LiveMode = () => {
           audio.play();
         }
       } else {
-        alert("Erreur de compilation : " + data.error);
+        showToast("Erreur de compilation : " + data.error);
       }
     } catch (error) {
       console.error(error);
@@ -252,7 +254,8 @@ export const LiveMode = () => {
 
   return (
     <div className="w-full h-full pt-20 px-6 md:px-10 pb-10 flex flex-col font-sans">
-      
+      <ConfirmToastHost />
+
       {/* HEADER & NAVIGATION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
         <div>

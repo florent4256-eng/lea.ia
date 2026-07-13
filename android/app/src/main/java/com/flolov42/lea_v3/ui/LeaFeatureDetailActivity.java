@@ -18,8 +18,11 @@ import com.flolov42.lea_v3.notifications.*;
 import com.flolov42.lea_v3.utilities.*;
 
 import android.app.Activity;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -34,13 +37,15 @@ import android.widget.*;
  */
 public abstract class LeaFeatureDetailActivity extends Activity {
 
-    protected static final int BG   = 0xFF011627;
-    protected static final int CYAN = 0xFF00E5FF;
-    protected static final int CARD = 0xFF012040;
-    protected static final int GOLD = 0xFFFFD700;
-    protected static final int GRN  = 0xFF4CAF50;
-    protected static final int DIM  = 0xFF7BB8CC;
-    protected static final int RED  = 0xFFF44336;
+    protected static final int BG     = 0xFF020617;
+    protected static final int CYAN   = 0xFF00E5FF;
+    protected static final int VIOLET = 0xFF7C3AED;
+    protected static final int CARD   = 0xFF0B1526;
+    protected static final int GOLD   = 0xFFFFD700;
+    protected static final int GRN    = 0xFF4CAF50;
+    protected static final int DIM    = 0xFF7BB8CC;
+    protected static final int RED    = 0xFFF44336;
+    protected static final int GLASS_BORDER = 0x1EFFFFFF;
 
     protected LeaPlusManager  plusMgr;
     protected LeaPlusDatabase db;
@@ -104,38 +109,45 @@ public abstract class LeaFeatureDetailActivity extends Activity {
         LinearLayout hdr = new LinearLayout(this);
         hdr.setOrientation(LinearLayout.HORIZONTAL);
         hdr.setGravity(Gravity.CENTER_VERTICAL);
-        hdr.setBackgroundColor(CARD);
-        hdr.setPadding(dp(8), dp(14), dp(16), dp(14));
+        hdr.setBackgroundColor(BG);
+        hdr.setPadding(dp(8), dp(20), dp(16), dp(12));
 
         Button back = new Button(this);
         back.setText("←");
         back.setTextColor(CYAN);
-        back.setBackgroundColor(Color.TRANSPARENT);
-        back.setTextSize(22);
-        back.setPadding(0, 0, dp(4), 0);
+        GradientDrawable backBg = new GradientDrawable();
+        backBg.setColor(0x14FFFFFF);
+        backBg.setShape(GradientDrawable.OVAL);
+        backBg.setStroke(dp(1), GLASS_BORDER);
+        back.setBackground(new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), backBg, null));
+        back.setTextSize(20);
+        back.setPadding(0, 0, 0, dp(2));
         back.setMinWidth(0); back.setMinHeight(0);
         back.setOnClickListener(v -> finish());
-        hdr.addView(back);
+        hdr.addView(back, new LinearLayout.LayoutParams(dp(42), dp(42)));
 
         TextView iconTv = new TextView(this);
         iconTv.setText(icon);
         iconTv.setTextSize(18);
-        iconTv.setPadding(0, 0, dp(8), 0);
+        iconTv.setPadding(dp(10), 0, dp(8), 0);
         hdr.addView(iconTv);
 
         TextView titleTv = new TextView(this);
         titleTv.setText(name);
-        titleTv.setTextColor(CYAN);
+        titleTv.setTextColor(Color.WHITE);
         titleTv.setTextSize(15);
         titleTv.setTypeface(null, Typeface.BOLD);
+        titleTv.setShadowLayer(dp(10), 0, 0, 0x8000E5FF);
         titleTv.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         hdr.addView(titleTv);
 
         statusBadge = new TextView(this);
         statusBadge.setText(enabled ? "● ON" : "○ OFF");
         statusBadge.setTextColor(enabled ? GRN : DIM);
-        statusBadge.setTextSize(11);
+        statusBadge.setTextSize(10);
         statusBadge.setTypeface(null, Typeface.BOLD);
+        statusBadge.setPadding(dp(10), dp(4), dp(10), dp(4));
+        statusBadge.setBackground(pillBg(enabled ? GRN : DIM, false));
         hdr.addView(statusBadge);
 
         vl.addView(hdr);
@@ -164,6 +176,7 @@ public abstract class LeaFeatureDetailActivity extends Activity {
         tCard.addView(tTexts);
 
         Switch sw = new Switch(this);
+        styleSwitch(sw, CYAN);
         sw.setChecked(enabled);
         sw.setOnCheckedChangeListener((v, on) -> handleToggle(on, name));
         tCard.addView(sw);
@@ -218,11 +231,17 @@ public abstract class LeaFeatureDetailActivity extends Activity {
     protected LinearLayout makeCard() {
         LinearLayout c = new LinearLayout(this);
         c.setOrientation(LinearLayout.VERTICAL);
-        c.setBackgroundColor(CARD);
+        GradientDrawable gd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        gd.setCornerRadius(dp(18));
+        gd.setStroke(dp(1), GLASS_BORDER);
+        c.setElevation(dp(2));
+        c.setBackground(gd);
         c.setPadding(dp(14), dp(12), dp(14), dp(12));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, dp(8), 0, 0);
+        lp.setMargins(0, dp(10), 0, 0);
         c.setLayoutParams(lp);
         return c;
     }
@@ -263,7 +282,7 @@ public abstract class LeaFeatureDetailActivity extends Activity {
 
     protected View divider() {
         View v = new View(this);
-        v.setBackgroundColor(0xFF023050);
+        v.setBackgroundColor(GLASS_BORDER);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(1));
         lp.setMargins(0, dp(6), 0, dp(6));
@@ -275,12 +294,17 @@ public abstract class LeaFeatureDetailActivity extends Activity {
         Button btn = new Button(this);
         btn.setText(text);
         btn.setTextColor(color);
-        btn.setBackgroundColor(0xFF023050);
+        GradientDrawable gd = new GradientDrawable();
+        gd.setColor((color & 0x00FFFFFF) | 0x22000000);
+        gd.setCornerRadius(dp(14));
+        gd.setStroke(dp(1), color);
+        btn.setBackground(new RippleDrawable(ColorStateList.valueOf((color & 0x00FFFFFF) | 0x55000000), gd, null));
+        btn.setElevation(dp(1));
         btn.setTextSize(11);
         btn.setTypeface(null, Typeface.BOLD);
         btn.setAllCaps(false);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(40));
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(42));
         lp.setMargins(0, dp(8), 0, 0);
         btn.setLayoutParams(lp);
         return btn;
@@ -290,7 +314,7 @@ public abstract class LeaFeatureDetailActivity extends Activity {
         TextView tv = new TextView(this);
         tv.setText(" " + text + " ");
         tv.setTextColor(color);
-        tv.setBackgroundColor(0x22000000 | (color & 0x00FFFFFF));
+        tv.setBackground(pillBg(color, false));
         tv.setTextSize(9);
         tv.setTypeface(null, Typeface.BOLD);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -298,6 +322,34 @@ public abstract class LeaFeatureDetailActivity extends Activity {
         lp.setMargins(dp(4), 0, 0, 0);
         tv.setLayoutParams(lp);
         return tv;
+    }
+
+    /** Fond pilule translucide bordé, utilisé pour badges/statuts. */
+    protected GradientDrawable pillBg(int color, boolean strongFill) {
+        GradientDrawable gd = new GradientDrawable();
+        gd.setColor((color & 0x00FFFFFF) | (strongFill ? 0x44000000 : 0x22000000));
+        gd.setCornerRadius(dp(20));
+        gd.setStroke(dp(1), color);
+        return gd;
+    }
+
+    /** Restyle un Switch Android par défaut aux couleurs Léa. */
+    protected void styleSwitch(Switch sw, int color) {
+        sw.setTrackTintList(new ColorStateList(
+            new int[][]{ new int[]{ android.R.attr.state_checked }, new int[]{} },
+            new int[]{ (color & 0x00FFFFFF) | 0x88000000, 0xFF37474F }));
+        sw.setThumbTintList(new ColorStateList(
+            new int[][]{ new int[]{ android.R.attr.state_checked }, new int[]{} },
+            new int[]{ color, 0xFFCFD8DC }));
+    }
+
+    /** Éclaircit légèrement une couleur (glassmorphism : dégradé subtil au lieu d'un aplat). */
+    protected int lighten(int color, float amount) {
+        int a = (color >>> 24) & 0xFF, r = (color >>> 16) & 0xFF, g = (color >>> 8) & 0xFF, b = color & 0xFF;
+        r = Math.min(255, (int) (r + (255 - r) * amount) + 8);
+        g = Math.min(255, (int) (g + (255 - g) * amount) + 8);
+        b = Math.min(255, (int) (b + (255 - b) * amount) + 8);
+        return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
     protected int dp(int v) { return (int)(v * getResources().getDisplayMetrics().density); }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Brain, Send, FolderOpen, FileText, Terminal, Code2, CheckCircle,
@@ -453,7 +452,7 @@ export const LeaAgent = () => {
         setMessages(m => {
           const filtered = m.filter(x => x.kind !== 'thinking');
           const withSummary = stats.reads + stats.commands + stats.searches + stats.code + stats.edits + stats.creates > 0
-            ? [...filtered, { kind: 'turn_summary', ...stats }]
+            ? [...filtered, { kind: 'turn_summary' as const, ...stats }]
             : filtered;
           return [...withSummary, { kind: 'confirm', editId: ev.editId, tool: ev.tool, args: ev.args, status: 'pending' }];
         });
@@ -470,7 +469,7 @@ export const LeaAgent = () => {
         setMessages(m => {
           const filtered = m.filter(x => x.kind !== 'thinking');
           const withSummary = stats.reads + stats.commands + stats.searches + stats.code + stats.edits + stats.creates > 0
-            ? [...filtered, { kind: 'turn_summary', ...stats }]
+            ? [...filtered, { kind: 'turn_summary' as const, ...stats }]
             : filtered;
           if (ev.text?.trim()) return [...withSummary, { kind: 'text', text: ev.text }];
           return withSummary;

@@ -4,6 +4,7 @@ import {
   RefreshCw, Image as ImageIcon, Type, Layers, Check,
   X, Loader2, Play, Gauge, Coins, Crown, Link2, Trash2
 } from 'lucide-react';
+import { saveFile } from '../../lib/download';
 
 const SERVER = () => (window as any).LEA_SERVER_URL || '';
 const currentUser = () => localStorage.getItem('lea_currentUser') || 'invité';
@@ -21,12 +22,12 @@ const BG_GRID = `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='
 
 const QUALITY_MAP: Record<Quality, { label: string; steps: number; minPerClip: number; icon: React.ReactNode; color: string }> = {
   rapide:  { label: 'Rapide',  steps: 15, minPerClip: 1.5, icon: <Zap   size={11} />, color: 'text-yellow-400' },
-  normal:  { label: 'Normal',  steps: 25, minPerClip: 3,   icon: <Gauge  size={11} />, color: 'text-blue-400'   },
-  qualite: { label: 'Qualité', steps: 30, minPerClip: 4,   icon: <Star   size={11} />, color: 'text-fuchsia-400' },
+  normal:  { label: 'Normal',  steps: 30, minPerClip: 3,   icon: <Gauge  size={11} />, color: 'text-blue-400'   },
+  qualite: { label: 'Qualité', steps: 40, minPerClip: 5,   icon: <Star   size={11} />, color: 'text-fuchsia-400' },
 };
 
-// Motion fixe — valeur calibrée pour un mouvement naturel/réaliste (SVD XT motion bucket)
-const MOTION_NATURAL = 127;
+// Motion réduit à 80 — mouvement naturel/fluide (127 = trop chaotique)
+const MOTION_NATURAL = 80;
 
 // Durées image→vidéo (4 options épurées)
 const DURATIONS_IMAGE = [
@@ -57,7 +58,7 @@ export function StudioVeo() {
   const [imagePreview, setImagePreview]   = useState<string | null>(null);
   const [imagePayload, setImagePayload]   = useState<{ type: 'base64' | 'url'; data: string } | null>(null);
   const [totalSeconds, setTotalSeconds]   = useState(4);
-  const [fps, setFps]                     = useState(6);
+  const [fps, setFps]                     = useState(12);
   const [quality, setQuality]             = useState<Quality>('normal');
   const [isGenerating, setIsGenerating]   = useState(false);
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
@@ -311,12 +312,7 @@ export function StudioVeo() {
   // ── Télécharger ───────────────────────────────────────────────────────────
   const downloadVideo = async (item: HistoryItem) => {
     try {
-      const r = await fetch(`${SERVER()}${item.url}`);
-      const blob = await r.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = item.filename;
-      a.click();
+      await saveFile(`${SERVER()}${item.url}`, item.filename);
       setDownloadedId(item.filename);
       setTimeout(() => setDownloadedId(null), 2000);
     } catch {}
@@ -610,9 +606,9 @@ export function StudioVeo() {
 
           {/* FPS */}
           <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Fluidité — {fps} fps</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Fluidité — {fps} fps <span className="text-purple-400/60">(→ {Math.min(fps * 2, 24)}fps interpolé)</span></p>
             <div className="flex gap-2">
-              {[6, 8].map(f => (
+              {[8, 12, 24].map(f => (
                 <button key={f} onClick={() => setFps(f)}
                   className={`flex-1 py-2 rounded-xl border text-[10px] font-black transition-all active:scale-95 ${fps === f ? 'bg-purple-500/20 border-purple-500/40 text-purple-300' : 'border-white/10 text-slate-500 hover:text-slate-300 hover:border-white/20'}`}
                 >

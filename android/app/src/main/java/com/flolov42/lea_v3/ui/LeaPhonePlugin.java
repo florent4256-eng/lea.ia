@@ -377,11 +377,35 @@ public class LeaPhonePlugin extends Plugin {
     }
 
     // 🔄 OUVERTURE DES MISES À JOUR (One UI style)
+    // 💕 ÉCOSYSTÈME LÉA — bascule vers l'app Léa Love si elle est installée, sinon
+    // retombe sur le web Léa Love. Même patron que LeaLovePhonePlugin.openLeaApp() côté
+    // app Léa Love (bouton "Ouvrir Léa"), en miroir.
+    @PluginMethod
+    public void openLeaLoveApp(PluginCall call) {
+        Context ctx = getContext();
+        try {
+            Intent i = ctx.getPackageManager().getLaunchIntentForPackage("com.flolov42.lealove");
+            if (i == null) throw new Exception("Léa Love non installée");
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ctx.startActivity(i);
+            call.resolve();
+        } catch (Exception e) {
+            try {
+                Intent web = new Intent(Intent.ACTION_VIEW, Uri.parse("https://lealove.lea-ia-local.com"));
+                web.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                ctx.startActivity(web);
+                call.resolve();
+            } catch (Exception ex) {
+                call.reject("Impossible d'ouvrir Léa Love.");
+            }
+        }
+    }
+
     @PluginMethod
     public void openUpdates(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             try {
-                Intent intent = new Intent(getActivity(), UpdateActivity.class);
+                Intent intent = new Intent(getActivity(), UpdateCheckActivity.class);
                 getActivity().startActivity(intent);
                 call.resolve();
             } catch (Exception e) {
@@ -404,13 +428,15 @@ public class LeaPhonePlugin extends Plugin {
         });
     }
 
-    // 🗺️ OUVERTURE DU MODULE MAPS (OSMDroid natif)
+    // 🗺️ OUVERTURE DU MODULE MAPS (MapLibre Native — 3D, jour/nuit, signalement)
     @PluginMethod
     public void openMaps(PluginCall call) {
+        String currentUser = call.getString("currentUser", "");
         getActivity().runOnUiThread(() -> {
             try {
                 Toast.makeText(getContext(), "🚀 Ouverture Maps...", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(getActivity(), com.flolov42.lea_v3.maps.LeaMapsActivity.class);
+                intent.putExtra("currentUser", currentUser);
                 getActivity().startActivity(intent);
                 call.resolve();
             } catch (Throwable e) {

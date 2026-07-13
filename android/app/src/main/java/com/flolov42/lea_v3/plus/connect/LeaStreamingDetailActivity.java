@@ -20,7 +20,10 @@ import com.flolov42.lea_v3.utilities.*;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -32,9 +35,9 @@ import java.util.Locale;
 
 public class LeaStreamingDetailActivity extends LeaFeatureDetailActivity {
 
-    private static final int BG    = 0xFF000D1A;
-    private static final int CARD  = 0xFF001A2E;
-    private static final int CARD2 = 0xFF00243F;
+    private static final int BG    = 0xFF020617;
+    private static final int CARD  = 0xFF0B1526;
+    private static final int CARD2 = 0xFF13243B;
     private static final int CYAN  = 0xFF00E5FF;
     private static final int GREEN = 0xFF10B981;
     private static final int PURPLE= 0xFF7C3AED;
@@ -87,6 +90,8 @@ public class LeaStreamingDetailActivity extends LeaFeatureDetailActivity {
         // ── STATUT LIVE ───────────────────────────────────────────────
         secHeader(parent, "📡 STATUT");
         LinearLayout hero = card(dp(12), dp(4), dp(12), 0);
+        // Statut live = "canal actif" : bordure accentuée en rouge quand le stream est en cours.
+        ((GradientDrawable) hero.getBackground()).setStroke(dp(1), isLive ? RED : GLASS_BORDER);
         hero.setOrientation(LinearLayout.HORIZONTAL);
         hero.setGravity(Gravity.CENTER_VERTICAL);
         hero.setPadding(dp(16), dp(18), dp(16), dp(18));
@@ -114,7 +119,7 @@ public class LeaStreamingDetailActivity extends LeaFeatureDetailActivity {
         if (isLive) {
             Button stopBtn = new Button(this);
             stopBtn.setText("⏹ TERMINER");
-            stopBtn.setTextColor(RED); stopBtn.setBackgroundColor(CARD2);
+            stopBtn.setTextColor(RED); styleActionBtn(stopBtn, RED);
             stopBtn.setTextSize(10); stopBtn.setTypeface(null, Typeface.BOLD); stopBtn.setAllCaps(false);
             stopBtn.setPadding(dp(12), dp(6), dp(12), dp(6));
             stopBtn.setLayoutParams(new LinearLayout.LayoutParams(-2, dp(36)));
@@ -147,8 +152,7 @@ public class LeaStreamingDetailActivity extends LeaFeatureDetailActivity {
                 Button pb = new Button(this);
                 pb.setText(PLATFORMS[i][0] + " " + PLATFORMS[i][1]);
                 pb.setTextSize(9); pb.setTypeface(null, Typeface.BOLD); pb.setAllCaps(false);
-                pb.setBackgroundColor(i == 0 ? CYAN : CARD2);
-                pb.setTextColor(i == 0 ? BG : DIM2);
+                stylePlatBtn(pb, i == 0);
                 pb.setPadding(dp(10), dp(4), dp(10), dp(4));
                 LinearLayout.LayoutParams pbLp = new LinearLayout.LayoutParams(-2, dp(30));
                 pbLp.setMargins(0, 0, dp(4), 0); pb.setLayoutParams(pbLp);
@@ -156,8 +160,7 @@ public class LeaStreamingDetailActivity extends LeaFeatureDetailActivity {
                 pb.setOnClickListener(v -> {
                     selectedPlatform[0] = PLATFORMS[idx][2];
                     for (int j = 0; j < platBtns.length; j++) {
-                        platBtns[j].setBackgroundColor(j == idx ? CYAN : CARD2);
-                        platBtns[j].setTextColor(j == idx ? BG : DIM2);
+                        stylePlatBtn(platBtns[j], j == idx);
                     }
                 });
                 platRow.addView(pb);
@@ -178,7 +181,7 @@ public class LeaStreamingDetailActivity extends LeaFeatureDetailActivity {
 
             Button startBtn = new Button(this);
             startBtn.setText("▶  DÉMARRER LE STREAM");
-            startBtn.setTextColor(BG); startBtn.setBackgroundColor(CYAN);
+            startBtn.setTextColor(CYAN); styleActionBtn(startBtn, CYAN);
             startBtn.setTextSize(12); startBtn.setTypeface(null, Typeface.BOLD); startBtn.setAllCaps(false);
             LinearLayout.LayoutParams sbLp = new LinearLayout.LayoutParams(-1, dp(44));
             sbLp.setMargins(0, dp(4), 0, 0); startBtn.setLayoutParams(sbLp);
@@ -199,7 +202,7 @@ public class LeaStreamingDetailActivity extends LeaFeatureDetailActivity {
             LinearLayout clipCard = card(dp(12), dp(4), dp(12), 0);
             Button clipBtn = new Button(this);
             clipBtn.setText("✂️  MARQUER UN CLIP");
-            clipBtn.setTextColor(GOLD); clipBtn.setBackgroundColor(CARD2);
+            clipBtn.setTextColor(GOLD); styleActionBtn(clipBtn, GOLD);
             clipBtn.setTextSize(12); clipBtn.setTypeface(null, Typeface.BOLD); clipBtn.setAllCaps(false);
             clipBtn.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(44)));
             clipBtn.setOnClickListener(v -> {
@@ -233,7 +236,7 @@ public class LeaStreamingDetailActivity extends LeaFeatureDetailActivity {
             texts.addView(tv(p[1], 12, WHITE, Typeface.BOLD));
             row.addView(texts);
             Button btn = new Button(this); btn.setText("Ouvrir");
-            btn.setTextColor(CYAN); btn.setBackgroundColor(CARD2);
+            btn.setTextColor(CYAN); styleActionBtn(btn, CYAN);
             btn.setTextSize(10); btn.setTypeface(null, Typeface.BOLD); btn.setAllCaps(false);
             btn.setPadding(dp(10), dp(4), dp(10), dp(4));
             btn.setLayoutParams(new LinearLayout.LayoutParams(-2, dp(30)));
@@ -309,7 +312,14 @@ public class LeaStreamingDetailActivity extends LeaFeatureDetailActivity {
 
     private LinearLayout card(int ml, int mt, int mr, int mb) {
         LinearLayout c = new LinearLayout(this); c.setOrientation(LinearLayout.VERTICAL);
-        c.setBackgroundColor(CARD); c.setPadding(dp(14), dp(12), dp(14), dp(12));
+        GradientDrawable gd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        gd.setCornerRadius(dp(18));
+        gd.setStroke(dp(1), GLASS_BORDER);
+        c.setElevation(dp(2));
+        c.setBackground(gd);
+        c.setPadding(dp(14), dp(12), dp(14), dp(12));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(ml, mt, mr, mb); c.setLayoutParams(lp); return c;
     }
@@ -321,6 +331,23 @@ public class LeaStreamingDetailActivity extends LeaFeatureDetailActivity {
     private void secHeader(LinearLayout p, String text) {
         TextView t = tv(text, 11, GOLD, Typeface.BOLD);
         t.setPadding(dp(16), dp(14), dp(16), dp(6)); p.addView(t);
+    }
+
+    /** Bouton d'action verre translucide + bordure accent + ripple (recette actionButton() de la base). */
+    private void styleActionBtn(Button btn, int color) {
+        GradientDrawable gd = new GradientDrawable();
+        gd.setColor((color & 0x00FFFFFF) | 0x22000000);
+        gd.setCornerRadius(dp(14));
+        gd.setStroke(dp(1), color);
+        btn.setBackground(new RippleDrawable(ColorStateList.valueOf((color & 0x00FFFFFF) | 0x55000000), gd, null));
+        btn.setElevation(dp(1));
+    }
+
+    /** Chip pilule (sélecteur de plateforme) réutilisant pillBg() de la base. */
+    private void stylePlatBtn(Button b, boolean selected) {
+        int c = selected ? CYAN : DIM2;
+        b.setTextColor(selected ? WHITE : DIM2);
+        b.setBackground(pillBg(c, selected));
     }
 
     @Override

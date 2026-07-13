@@ -18,6 +18,7 @@ import com.flolov42.lea_v3.notifications.*;
 import com.flolov42.lea_v3.utilities.*;
 
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
@@ -25,9 +26,9 @@ import java.util.Calendar;
 
 public class LeaAnnualReportDetailActivity extends LeaFeatureDetailActivity {
 
-    private static final int BG    = 0xFF000D1A;
-    private static final int CARD  = 0xFF001A2E;
-    private static final int CARD2 = 0xFF00243F;
+    private static final int BG    = 0xFF020617;
+    private static final int CARD  = 0xFF0B1526;
+    private static final int CARD2 = 0xFF0F1B2E;
     private static final int CYAN  = 0xFF00E5FF;
     private static final int GREEN = 0xFF10B981;
     private static final int PURPLE= 0xFF7C3AED;
@@ -35,6 +36,7 @@ public class LeaAnnualReportDetailActivity extends LeaFeatureDetailActivity {
     private static final int WHITE = 0xFFFFFFFF;
     private static final int DIM   = 0xFF64748B;
     private static final int DIM2  = 0xFF94A3B8;
+    private static final int GLASS_BORDER = 0x1EFFFFFF;
 
     @Override protected String getFeatureId() { return LeaPlusDatabase.REPORT; }
 
@@ -48,7 +50,13 @@ public class LeaAnnualReportDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
         hero.setGravity(Gravity.CENTER);
-        hero.setBackgroundColor(CARD);
+        GradientDrawable heroGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        heroGd.setCornerRadius(dp(20));
+        heroGd.setStroke(dp(1), GLASS_BORDER);
+        hero.setElevation(dp(2));
+        hero.setBackground(heroGd);
         hero.setPadding(dp(20), dp(28), dp(20), dp(24));
         LinearLayout.LayoutParams hLp = new LinearLayout.LayoutParams(-1, -2);
         hLp.setMargins(dp(12), dp(8), dp(12), 0); hero.setLayoutParams(hLp);
@@ -113,7 +121,13 @@ public class LeaAnnualReportDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout worldCard = new LinearLayout(this);
         worldCard.setOrientation(LinearLayout.HORIZONTAL);
         worldCard.setGravity(Gravity.CENTER_VERTICAL);
-        worldCard.setBackgroundColor(CARD);
+        GradientDrawable worldGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        worldGd.setCornerRadius(dp(18));
+        worldGd.setStroke(dp(1), GLASS_BORDER);
+        worldCard.setElevation(dp(2));
+        worldCard.setBackground(worldGd);
         worldCard.setPadding(dp(16), dp(16), dp(16), dp(16));
         LinearLayout.LayoutParams wcLp = new LinearLayout.LayoutParams(-1, -2);
         wcLp.setMargins(dp(12), dp(4), dp(12), 0); worldCard.setLayoutParams(wcLp);
@@ -130,7 +144,13 @@ public class LeaAnnualReportDetailActivity extends LeaFeatureDetailActivity {
         secHeader(parent, "💬 MESSAGE DE LÉA");
         LinearLayout msgCard = new LinearLayout(this);
         msgCard.setOrientation(LinearLayout.VERTICAL);
-        msgCard.setBackgroundColor(CARD);
+        GradientDrawable msgGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        msgGd.setCornerRadius(dp(18));
+        msgGd.setStroke(dp(1), GLASS_BORDER);
+        msgCard.setElevation(dp(2));
+        msgCard.setBackground(msgGd);
         msgCard.setPadding(dp(16), dp(16), dp(16), dp(16));
         LinearLayout.LayoutParams mLp = new LinearLayout.LayoutParams(-1, -2);
         mLp.setMargins(dp(12), dp(4), dp(12), dp(24)); msgCard.setLayoutParams(mLp);
@@ -143,7 +163,14 @@ public class LeaAnnualReportDetailActivity extends LeaFeatureDetailActivity {
 
     private View bigStat(String icon, String label, String value, int color) {
         LinearLayout s = new LinearLayout(this); s.setOrientation(LinearLayout.VERTICAL);
-        s.setGravity(Gravity.CENTER); s.setBackgroundColor(CARD);
+        s.setGravity(Gravity.CENTER);
+        GradientDrawable sGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        sGd.setCornerRadius(dp(14));
+        sGd.setStroke(dp(1), GLASS_BORDER);
+        s.setElevation(dp(2));
+        s.setBackground(sGd);
         s.setPadding(dp(12), dp(16), dp(12), dp(16));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1f);
         lp.setMargins(dp(3), 0, dp(3), 0); s.setLayoutParams(lp);

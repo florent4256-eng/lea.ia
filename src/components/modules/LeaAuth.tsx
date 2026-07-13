@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Key, User, ArrowRight, Sparkles, CheckCircle2, Info, Mail, Calendar, Type, Eye, EyeOff, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Key, User, ArrowRight, Sparkles, CheckCircle2, Info, Mail, Calendar, Type, Eye, EyeOff, ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
 
 // 🔌 INJECTION DU PONT POUR BIXBY
 import { setLeaIdentity } from '../../main';
+import { useConfirmToast } from '../../hooks/useConfirmToast';
 
 const API_BASE = '';
 
@@ -30,6 +31,34 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isKycVerified, setIsKycVerified] = useState(false);
+  const [showWeakPwdWarning, setShowWeakPwdWarning] = useState(false);
+  const [forceWeakPwd, setForceWeakPwd] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Compte créé ailleurs (ex. Léa Love) avec juste pseudo+mot de passe — il manque les
+  // informations propres à Léa. On les demande une fois, ici, avant d'entrer dans l'app.
+  const [needsCompletion, setNeedsCompletion] = useState(false);
+  const [pendingPseudo, setPendingPseudo] = useState('');
+  const [pendingData, setPendingData] = useState<any>(null);
+
+  // --- MODAL DE CONFIRMATION + TOAST (remplace les alert()/window.confirm() natifs moches) ---
+  const { askConfirm, showToast, ConfirmToastHost } = useConfirmToast();
+
+  // ── Calcul de la robustesse du mot de passe ──
+  const getPwdStrength = (pwd: string): { score: number; label: string; color: string; width: string } => {
+    if (!pwd) return { score: 0, label: '', color: 'bg-slate-700', width: '0%' };
+    let score = 0;
+    if (pwd.length >= 8)  score++;
+    if (pwd.length >= 12) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[a-z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    if (score <= 2) return { score, label: 'Faible', color: 'bg-red-500',    width: '25%'  };
+    if (score <= 4) return { score, label: 'Moyen',  color: 'bg-orange-400',  width: '60%'  };
+    return               { score, label: 'Fort',   color: 'bg-green-400',   width: '100%' };
+  };
+  const pwdStrength = getPwdStrength(password);
 
   // 1. DÉTECTION DU LIEN PAR MAIL
   useEffect(() => {
@@ -76,14 +105,9 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
             const data = await res.json();
             
             if (data.success) {
-                // On met à jour le coffre local instantanément pour éviter de devoir se reconnecter
-                localStorage.setItem('lea_user_' + resetUser.toLowerCase(), JSON.stringify({
-                    pseudo: resetUser,
-                    genre: genre,
-                    password: password.trim()
-                }));
-                alert("✅ Mission accomplie : Code secret mis à jour avec succès dans le bunker !");
-                window.location.href = '/'; 
+                // M-04 : on ne stocke JAMAIS le mot de passe en clair dans localStorage
+                showToast("✅ Mission accomplie : Code secret mis à jour avec succès dans le bunker !");
+                window.location.href = '/';
             } else {
                 setError(data.error);
             }
@@ -113,7 +137,7 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
             const data = await res.json();
             
             if (data.success) {
-                alert("📧 " + data.message);
+                showToast("📧 " + data.message);
                 setIsForgotPassword(false);
             } else {
                 setError(data.error);
@@ -133,25 +157,16 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
           setError("Remplis tous les champs du dossier, mon chéri."); return;
       }
       if (!acceptTerms) { setError("L'acceptation des CGU est obligatoire."); return; }
-     
+      // Avertissement mot de passe faible (peut être ignoré)
+      if (pwdStrength.score <= 2 && !forceWeakPwd) {
+        setShowWeakPwdWarning(true);
+        return;
+      }
     }
     
     setIsLoading(true);
     setError('');
     const formattedPseudo = pseudo.trim();
-
-    // --- CALCUL DE L'ÂGE EXACT ---
-    let isAdult = true;
-    if (!isLogin && dob) {
-        const birthDate = new Date(dob);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
-        isAdult = age >= 18;
-    }
 
     try {
         if (!isLogin) {
@@ -216,30 +231,96 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
                 body: JSON.stringify({ username: formattedPseudo, password: password.trim() })
             });
             const data = await res.json();
-            
+
             if (!data.success) {
                 setError(data.error || "Identifiants incorrects.");
                 setIsLoading(false);
                 return;
             }
-            
-            // 🟢 MATRICE ÉCONOMIQUE : Synchronisation à la connexion
-            const userSub = data.abonnement || 'free';
-            const defaultTokens = userSub === 'ultra' ? '10000' : userSub === 'pro' ? '7000' : userSub === 'ai_plus' ? '3000' : '50';
-            const defaultDaily = userSub === 'ultra' ? '200' : userSub === 'pro' ? '100' : userSub === 'ai_plus' ? '50' : '20';
 
-            localStorage.setItem('lea_currentUser', formattedPseudo);
-            localStorage.setItem('lea_isAdult', isAdult.toString());
-            localStorage.setItem('lea_abonnement', userSub);
-            localStorage.setItem('lea_tokens', data.tokens?.toString() || defaultTokens);
-            localStorage.setItem('lea_daily_left', data.daily_left?.toString() || defaultDaily);
-            localStorage.setItem('lea_last_reset', data.last_reset || new Date().toDateString());
-            
-            // 🎯 FRAPPE 2 : Gravure de l'identité dans le S23 Ultra
-            setLeaIdentity(formattedPseudo);
+            // Compte créé via Léa Love (ou tout autre point d'entrée minimal) : il manque
+            // les informations propres à Léa. On les demande avant d'entrer dans l'app.
+            if (!data.nom || !data.prenom || !data.dateNaissance || !data.genre) {
+                setNom(data.nom || '');
+                setPrenom(data.prenom || '');
+                setDob(data.dateNaissance || '');
+                setEmail(data.email || '');
+                setGenre(data.genre || '');
+                setPendingPseudo(formattedPseudo);
+                setPendingData(data);
+                setNeedsCompletion(true);
+                setIsLoading(false);
+                return;
+            }
 
-            onLogin(formattedPseudo);
+            finalizeLogin(formattedPseudo, data);
         }
+    } catch (err) {
+        setError("Erreur critique de communication avec la Tour Master.");
+        setIsLoading(false);
+    }
+  };
+
+  // Écriture localStorage + entrée dans l'app — extrait pour être appelé soit directement
+  // (compte déjà complet), soit après le formulaire de complétion (compte créé ailleurs).
+  const finalizeLogin = (formattedPseudo: string, data: any) => {
+    const userSub = data.abonnement || 'free';
+    const defaultTokens = userSub === 'ultra' ? '10000' : userSub === 'pro' ? '7000' : userSub === 'ai_plus' ? '3000' : '50';
+    const defaultDaily = userSub === 'ultra' ? '200' : userSub === 'pro' ? '100' : userSub === 'ai_plus' ? '50' : '20';
+
+    localStorage.setItem('lea_currentUser', formattedPseudo);
+    // M-03/I-02 : isAdult depuis la réponse serveur uniquement, jamais recalculé côté client
+    localStorage.setItem('lea_isAdult', data.isAdult !== undefined ? data.isAdult.toString() : 'true');
+    // M-01 : stocker le token de session pour les requêtes authentifiées
+    if (data.sessionToken) localStorage.setItem('lea_session_token', data.sessionToken);
+    localStorage.setItem('lea_abonnement', userSub);
+    localStorage.setItem('lea_tokens', data.tokens?.toString() || defaultTokens);
+    localStorage.setItem('lea_daily_left', data.dailyQuota?.toString() || data.daily_left?.toString() || defaultDaily);
+    localStorage.setItem('lea_last_reset', data.last_reset || new Date().toDateString());
+
+    // 🎯 Gravure de l'identité dans le S23 Ultra
+    setLeaIdentity(formattedPseudo);
+
+    onLogin(formattedPseudo);
+  };
+
+  const submitCompletion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nom.trim() || !prenom.trim() || !dob || !email.trim() || !genre) {
+        setError("Remplis tous les champs pour finir ton inscription Léa.");
+        return;
+    }
+    setIsLoading(true);
+    setError('');
+    try {
+        const res = await fetch(`${API_BASE}/api/user/update-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: pendingPseudo,
+                nom: nom.trim(),
+                prenom: prenom.trim(),
+                dateNaissance: dob,
+                email: email.trim(),
+                genre,
+            }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+            setError(data.error || "Erreur lors de la mise à jour du profil.");
+            setIsLoading(false);
+            return;
+        }
+        // Re-vérification : récupère isAdult recalculé côté serveur plutôt que de
+        // réutiliser la valeur périmée de la première réponse (mineur/majeur dépend
+        // de la date de naissance qu'on vient tout juste de renseigner).
+        const freshRes = await fetch(`${API_BASE}/api/auth/verify-session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: pendingPseudo, password: password.trim() }),
+        });
+        const freshData = await freshRes.json();
+        finalizeLogin(pendingPseudo, freshData.success ? freshData : { ...pendingData, nom: nom.trim(), prenom: prenom.trim(), dateNaissance: dob, email: email.trim(), genre });
     } catch (err) {
         setError("Erreur critique de communication avec la Tour Master.");
         setIsLoading(false);
@@ -251,12 +332,14 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
   // =========================================
   if (showTerms) {
     return (
-      <div className="flex h-screen w-full bg-[#000814] items-center justify-center font-sans relative overflow-hidden p-4">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 pointer-events-none"></div>
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#0047ff] blur-[150px] opacity-20 pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00f2ff] blur-[150px] opacity-10 pointer-events-none" />
+      <div className="flex h-screen w-full bg-[#050505] items-center justify-center font-sans relative overflow-hidden p-4">
+        <ConfirmToastHost />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSczMicgaGVpZ2h0PSczMic+PGNpcmNsZSBjeD0nMS41JyBjeT0nMS41JyByPScwLjc1JyBmaWxsPSd3aGl0ZScvPjwvc3ZnPg==')] opacity-[0.06] pointer-events-none" />
+        <div className="absolute top-[-15%] left-[-10%] w-[55%] h-[55%] bg-[#0047ff] blur-[180px] opacity-25 pointer-events-none" />
+        <div className="absolute bottom-[-15%] right-[-10%] w-[55%] h-[55%] bg-[#00d4ff] blur-[180px] opacity-[0.15] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] h-[30%] bg-[#6600ff] blur-[130px] opacity-[0.08] pointer-events-none" />
         
-        <div className="relative z-10 w-full max-w-2xl bg-[#000b1e]/90 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-2xl flex flex-col h-[90vh]">
+        <div className="relative z-10 w-full max-w-2xl bg-[#020C1E]/80 backdrop-blur-2xl border border-[#00d4ff]/10 rounded-[2rem] shadow-[0_0_80px_rgba(0,71,255,0.18),0_0_0_1px_rgba(0,212,255,0.07)] flex flex-col h-[90vh] animate-in fade-in slide-in-from-bottom-6 duration-700">
           
           <div className="flex items-center justify-between p-6 border-b border-white/10 shrink-0">
             <button onClick={() => setShowTerms(false)} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2">
@@ -316,7 +399,7 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
 
             <div className="space-y-3">
               <h3 className="text-[#00f2ff] font-bold text-lg">5. LIMITATION DE RESPONSABILITÉ & GARANTIE</h3>
-              <p>Le réseau LÉA est fourni "en l'état" sans aucune garantie de résultat ou de disponibilité. <strong>L'utilisateur décharge expressément l'Administrateur (flolov42)</strong> de toute responsabilité en cas de dommages, pertes de données, ou conséquences légales découlant de l'utilisation des contenus générés par l'IA.</p>
+              <p>Le réseau LÉA est fourni "en l'état" sans aucune garantie de résultat ou de disponibilité. <strong>L'utilisateur décharge expressément l'Administrateur</strong> de toute responsabilité en cas de dommages, pertes de données, ou conséquences légales découlant de l'utilisation des contenus générés par l'IA.</p>
             </div>
 
             <div className="space-y-3">
@@ -352,7 +435,7 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
 
             <div className="space-y-3">
               <h3 className="text-[#00f2ff] font-bold text-lg">11. SÉCURITÉ PHYSIQUE & DOMOTIQUE</h3>
-              <p>Pour les modules <strong>Léa Auto</strong> et <strong>Léa Home</strong>, l'utilisateur accepte les risques liés à l'interconnectivité. flolov42 ne pourra être tenu responsable des pannes ou accidents découlant d'une commande système.</p>
+              <p>Pour les modules <strong>Léa Auto</strong> et <strong>Léa Home</strong>, l'utilisateur accepte les risques liés à l'interconnectivité. L'Administrateur ne pourra être tenu responsable des pannes ou accidents découlant d'une commande système.</p>
             </div>
 
             <div className="space-y-3">
@@ -363,7 +446,7 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
 
             <div className="space-y-3">
               <h3 className="text-[#00f2ff] font-bold text-lg">13. CLAUSE D'INDEMNISATION</h3>
-              <p>L'utilisateur s'engage à indemniser, défendre et dégager de toute responsabilité l'Administrateur (flolov42) contre toute réclamation, poursuite, perte ou dépense (y compris les frais d'avocat) résultant de son utilisation du réseau LÉA, de la violation de ces CGU ou de la violation des droits d'un tiers.</p>
+              <p>L'utilisateur s'engage à indemniser, défendre et dégager de toute responsabilité l'Administrateur contre toute réclamation, poursuite, perte ou dépense (y compris les frais d'avocat) résultant de son utilisation du réseau LÉA, de la violation de ces CGU ou de la violation des droits d'un tiers.</p>
             </div>
 
             <div className="space-y-3">
@@ -378,7 +461,7 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
 
             <div className="space-y-3">
               <h3 className="text-[#00f2ff] font-bold text-lg">16. EXCLUSION DE RESPONSABILITÉ FINANCIÈRE</h3>
-              <p>L'utilisation des outils de trading, de bots ou de portefeuilles via Léa s'effectue aux risques et périls de l'utilisateur. Aucune perte financière, qu'elle soit due à la volatilité du marché, à une défaillance du code ou à une erreur système, ne pourra donner lieu à un remboursement ou à des poursuites contre flolov42.</p>
+              <p>L'utilisation des outils de trading, de bots ou de portefeuilles via Léa s'effectue aux risques et périls de l'utilisateur. Aucune perte financière, qu'elle soit due à la volatilité du marché, à une défaillance du code ou à une erreur système, ne pourra donner lieu à un remboursement ou à des poursuites contre l'Administrateur.</p>
             </div>
 
             <div className="space-y-3">
@@ -393,7 +476,7 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
 
             <div className="space-y-3">
               <h3 className="text-[#00f2ff] font-bold text-lg">19. JURIDICTION ET LOI APPLICABLE</h3>
-              <p>Le réseau LÉA est opéré sous juridiction française. En cas de litige, et à défaut de résolution à l'amiable, les lois françaises s'appliqueront et les tribunaux compétents seront exclusivement ceux du lieu de résidence de l'Administrateur (flolov42).</p>
+              <p>Le réseau LÉA est opéré sous juridiction française. En cas de litige, et à défaut de résolution à l'amiable, les lois françaises s'appliqueront et les tribunaux compétents seront exclusivement ceux du lieu de résidence de l'Administrateur.</p>
             </div>
 
             <div className="space-y-3">
@@ -404,11 +487,11 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
 
           </div>
 
-          <div className="p-6 border-t border-white/10 shrink-0 bg-[#000b1e]">
-             <button 
-                type="button" 
-                onClick={() => { setAcceptTerms(true); setShowTerms(false); }} 
-                className="w-full py-4 bg-[#0047ff] hover:bg-[#00f2ff] text-white font-bold tracking-wide rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(0,71,255,0.3)] hover:shadow-[0_0_20px_rgba(0,242,255,0.4)]"
+          <div className="p-6 border-t border-[#00d4ff]/10 shrink-0 bg-[#010A1A]">
+             <button
+                type="button"
+                onClick={() => { setAcceptTerms(true); setShowTerms(false); }}
+                className="w-full py-4 bg-transparent border border-[#00d4ff]/70 text-[#00d4ff] font-bold tracking-wide rounded-xl flex items-center justify-center gap-2 transition-all duration-200 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] hover:bg-[#00d4ff] hover:text-[#020617] hover:border-[#00d4ff] hover:shadow-[0_0_25px_rgba(0,212,255,0.7),0_0_60px_rgba(0,212,255,0.3)] hover:scale-105 active:scale-[0.98]"
              >
                 J'accepte et je rejoins le réseau <CheckCircle2 size={18} />
              </button>
@@ -420,19 +503,116 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
   }
 
   // =========================================
+  // VUE DE COMPLÉTION (compte créé via Léa Love — infos Léa manquantes)
+  // =========================================
+  if (needsCompletion) {
+    return (
+      <div className="min-h-screen w-full bg-[#050505] flex items-center justify-center font-sans px-4 py-8">
+        <ConfirmToastHost />
+        <div className="w-full max-w-md bg-[#0f172a] rounded-[18px] border border-[#00d4ff]/10 p-8">
+          <div className="flex flex-col items-center mb-6 text-center">
+            <Sparkles size={28} className="text-[#00f2ff] mb-3" />
+            <h1 className="text-xl font-black text-white tracking-tight">Finis ton inscription Léa</h1>
+            <p className="text-slate-400 text-xs mt-2">
+              Ton compte {pendingPseudo} vient d'un autre point d'entrée (Léa Love). Il manque quelques informations propres à Léa pour continuer.
+            </p>
+          </div>
+
+          <form onSubmit={submitCompletion} className="flex flex-col gap-3">
+            <div className="relative group">
+              <Type className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
+              <input type="text" placeholder="Prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} className="w-full bg-[#050505] border border-white/10 text-white rounded-lg py-3 pl-11 pr-3 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm" />
+            </div>
+            <div className="relative group">
+              <Type className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
+              <input type="text" placeholder="Nom" value={nom} onChange={(e) => setNom(e.target.value)} className="w-full bg-[#050505] border border-white/10 text-white rounded-lg py-3 pl-11 pr-3 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm" />
+            </div>
+            <div className="relative group">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
+              <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#050505] border border-white/10 text-white rounded-lg py-3 pl-11 pr-3 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm" />
+            </div>
+            <div className="relative group">
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
+              <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="w-full bg-[#050505] border border-white/10 text-white/70 rounded-lg py-3 pl-11 pr-3 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert" />
+            </div>
+
+            <div>
+              <label className="text-slate-400 text-xs font-medium mb-2 flex items-center gap-2">
+                <Sparkles size={14} className="text-[#00f2ff]" /> Nature de l'identité
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'homme', label: 'Homme' },
+                  { id: 'femme', label: 'Femme' },
+                  { id: 'enfant', label: 'Enfant' }
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setGenre(item.id)}
+                    className={`py-2 px-3 rounded-lg border text-xs font-medium transition-all ${
+                      genre === item.id
+                        ? 'bg-[#00f2ff]/10 border-[#00f2ff] text-[#00f2ff] shadow-[0_0_15px_rgba(0,242,255,0.2)]'
+                        : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:border-slate-700'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {error && <p className="text-red-400 text-xs text-center">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full mt-2 py-3 bg-[#00d4ff] text-[#020617] font-bold rounded-xl disabled:opacity-50"
+            >
+              {isLoading ? 'Enregistrement…' : 'Continuer'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================
   // VUE PRINCIPALE (Connexion / Inscription)
   // =========================================
   return (
-    <div className="flex h-screen w-full bg-[#000814] items-center justify-center font-sans relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 pointer-events-none"></div>
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#0047ff] blur-[150px] opacity-20 pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00f2ff] blur-[150px] opacity-10 pointer-events-none" />
-      
-      <div className="relative z-10 w-full max-w-md p-8 sm:p-10 bg-[#000b1e]/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl overflow-y-auto max-h-[90vh] custom-scrollbar">
-        
+    <div className="min-h-screen w-full bg-[#050505] flex items-center justify-center font-sans px-4 py-8">
+      <ConfirmToastHost />
+
+      <div
+        className={`relative group overflow-hidden transition-all duration-500 ease-in-out p-[2px] w-full max-w-md rounded-[20px] ${isExpanded ? 'max-h-[900px]' : 'max-h-[60px] hover:max-h-[900px]'}`}
+        onClick={() => setIsExpanded(true)}
+      >
+        <div
+          className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-spin"
+          style={{ background: 'conic-gradient(from 0deg, transparent 0deg 36deg, #00ffff 36deg 136deg, transparent 136deg 216deg, #ff00ff 216deg 316deg, transparent 316deg 360deg)', animationDuration: '4s' }}
+        />
+        <div className="relative z-10 bg-[#0f172a] w-full h-full rounded-[18px] flex flex-col">
+
+          {/* Capsule toujours visible */}
+          <div className="h-[60px] flex items-center justify-center gap-3 shrink-0 cursor-pointer select-none">
+            <Lock size={16} className="text-[#00ffff]" />
+            <span className="text-white font-bold uppercase tracking-[0.25em] text-sm">
+              {resetToken ? 'Récupération' : isForgotPassword ? 'Récupération' : isLogin ? 'Connexion' : 'Inscription'}
+            </span>
+          </div>
+
+          {/* Corps — apparaît après expansion */}
+          <div className={`transition-all duration-500 delay-150 overflow-y-auto px-8 pb-8 custom-scrollbar ${isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 pointer-events-none'}`}>
+
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-[#0047ff] to-[#00f2ff] rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(0,242,255,0.3)] mb-4">
-            <Sparkles size={32} className="text-white" />
+          <div className="relative mb-4">
+            <div className="absolute inset-[-10px] rounded-[1.75rem] bg-gradient-to-br from-[#0047ff] to-[#00d4ff] opacity-[0.22] blur-xl animate-pulse" />
+            <img
+              src="/lea-logo.png"
+              alt="Léa"
+              className="relative w-16 h-16 rounded-2xl shadow-[0_0_45px_rgba(0,212,255,0.45)] object-cover"
+            />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tighter">
             LÉA <span className="text-[#00f2ff]">V3</span>
@@ -455,17 +635,17 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
               <div className="flex gap-3">
                 <div className="relative group flex-1">
                   <Type className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
-                  <input type="text" placeholder="Prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 pl-11 pr-3 focus:outline-none focus:border-[#00f2ff]/50 transition-all text-sm" />
+                  <input type="text" placeholder="Prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} className="w-full bg-[#050505] border border-white/10 text-white rounded-lg py-3 pl-11 pr-3 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm" />
                 </div>
                 <div className="relative group flex-1">
                   <Type className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
-                  <input type="text" placeholder="Nom" value={nom} onChange={(e) => setNom(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 pl-11 pr-3 focus:outline-none focus:border-[#00f2ff]/50 transition-all text-sm" />
+                  <input type="text" placeholder="Nom" value={nom} onChange={(e) => setNom(e.target.value)} className="w-full bg-[#050505] border border-white/10 text-white rounded-lg py-3 pl-11 pr-3 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm" />
                 </div>
               </div>
 
               <div className="relative group">
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
-                <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white/70 rounded-xl py-3 pl-11 pr-3 focus:outline-none focus:border-[#00f2ff]/50 transition-all text-sm [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert" />
+                <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="w-full bg-[#050505] border border-white/10 text-white/70 rounded-lg py-3 pl-11 pr-3 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert" />
               </div>
             </>
           )}
@@ -502,14 +682,14 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
           {(!resetToken) && (
              <div className="relative group">
                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
-               <input type="text" placeholder="Pseudo Opérateur" value={pseudo} onChange={(e) => setPseudo(e.target.value)} disabled={!!resetToken} className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 pl-11 pr-3 focus:outline-none focus:border-[#00f2ff]/50 transition-all text-sm disabled:opacity-50" />
+               <input type="text" placeholder="Pseudo Opérateur" value={pseudo} onChange={(e) => setPseudo(e.target.value)} disabled={!!resetToken} className="w-full bg-[#050505] border border-white/10 text-white rounded-lg py-3 pl-11 pr-3 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm disabled:opacity-50" />
              </div>
           )}
 
           {(!isLogin || isForgotPassword) && !resetToken && (
              <div className="relative group">
                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
-               <input type="email" placeholder="Adresse Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 pl-11 pr-3 focus:outline-none focus:border-[#00f2ff]/50 transition-all text-sm" />
+               <input type="email" placeholder="Adresse Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#050505] border border-white/10 text-white rounded-lg py-3 pl-11 pr-3 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm" />
              </div>
           )}
 
@@ -517,17 +697,32 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
             <div className="space-y-4">
               <div className="relative group">
                 <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
-                <input type={showPassword ? "text" : "password"} placeholder={resetToken ? "Nouveau Code Secret" : "Code Secret"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 pl-11 pr-12 focus:outline-none focus:border-[#00f2ff]/50 transition-all text-sm" />
+                <input type={showPassword ? "text" : "password"} placeholder={resetToken ? "Nouveau Code Secret" : "Code Secret"} value={password} onChange={(e) => { setPassword(e.target.value); setForceWeakPwd(false); }} className="w-full bg-[#050505] border border-white/10 text-white rounded-lg py-3 pl-11 pr-12 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#00f2ff] transition-colors">
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
 
+              {/* Jauge de robustesse — visible uniquement à l'inscription */}
+              {!isLogin && !isForgotPassword && !resetToken && password.length > 0 && (
+                <div className="space-y-1">
+                  <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-300 ${pwdStrength.color}`} style={{ width: pwdStrength.width }} />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${pwdStrength.score <= 2 ? 'text-red-400' : pwdStrength.score <= 4 ? 'text-orange-400' : 'text-green-400'}`}>
+                      {pwdStrength.label}
+                    </span>
+                    <span className="text-[9px] text-slate-500">Maj · Min · Chiffre · Symbole recommandés</span>
+                  </div>
+                </div>
+              )}
+
               {/* Le champ de CONFIRMATION, visible uniquement lors d'une réinitialisation */}
               {resetToken && (
                 <div className="relative group animate-in fade-in slide-in-from-top-2">
                   <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00f2ff] transition-colors" size={18} />
-                  <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirmer le Code Secret" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 pl-11 pr-12 focus:outline-none focus:border-[#00f2ff]/50 transition-all text-sm" />
+                  <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirmer le Code Secret" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-[#050505] border border-white/10 text-white rounded-lg py-3 pl-11 pr-12 focus:outline-none focus:border-[#00ffff] focus:ring-1 focus:ring-[#00ffff] transition-all text-sm" />
                   <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#00f2ff] transition-colors">
                     {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -554,10 +749,10 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
           <button 
             type="submit" 
             disabled={isLoading || (isMaintenance && !resetToken)} 
-            className={`w-full mt-4 py-4 font-bold tracking-wide rounded-xl flex items-center justify-center gap-2 transition-all shadow-2xl 
+            className={`w-full mt-4 py-4 font-bold tracking-wide rounded-xl flex items-center justify-center gap-2 transition-all duration-200 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] shadow-2xl
               ${isMaintenance && !resetToken
-                ? 'bg-red-600/20 border border-red-500/50 text-red-500 cursor-not-allowed' 
-                : 'bg-[#0047ff] hover:bg-[#00f2ff] text-white shadow-[0_0_15px_rgba(0,71,255,0.3)] hover:shadow-[0_0_20px_rgba(0,242,255,0.4)] disabled:opacity-50'
+                ? 'bg-red-600/20 border border-red-500/50 text-red-500 cursor-not-allowed'
+                : 'bg-transparent border border-[#00ffff] text-[#00ffff] font-bold hover:bg-[#00ffff] hover:text-black hover:drop-shadow-[0_0_15px_rgba(0,255,255,0.8)] hover:scale-105 active:scale-[0.98] disabled:opacity-40 disabled:scale-100 disabled:hover:bg-transparent disabled:hover:text-[#00ffff]'
               }`}
           >
             {isLoading ? (
@@ -589,7 +784,44 @@ export const LeaAuth = ({ onLogin, isMaintenance }: { onLogin: (pseudo: string) 
             </button>
           )}
         </div>
+          </div>
+        </div>
       </div>
+
+      {/* ── Modal avertissement mot de passe faible ── */}
+      {showWeakPwdWarning && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#060D1E] border border-red-500/40 rounded-2xl p-6 max-w-sm w-full shadow-[0_0_40px_rgba(239,68,68,0.2)] space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                <ShieldCheck size={20} className="text-red-400" />
+              </div>
+              <div>
+                <p className="font-black text-white text-sm uppercase tracking-widest">Mot de passe faible</p>
+                <p className="text-[10px] text-red-400 uppercase tracking-widest font-bold">Risque de piratage élevé</p>
+              </div>
+            </div>
+            <p className="text-slate-300 text-xs leading-relaxed">
+              Ton mot de passe ne respecte pas les critères de sécurité minimaux. Un pirate pourrait forcer l'accès à ton coffre-fort en quelques secondes.<br/><br/>
+              <span className="text-slate-400">Recommandé :</span> <span className="text-[#00f2ff]">12+ caractères, majuscule, chiffre, symbole.</span>
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => { setShowWeakPwdWarning(false); setPassword(''); }}
+                className="w-full py-2.5 bg-[#00f2ff] hover:bg-[#00c8d4] text-black font-black text-xs rounded-xl transition-all uppercase tracking-widest"
+              >
+                Améliorer mon mot de passe
+              </button>
+              <button
+                onClick={() => { setShowWeakPwdWarning(false); setForceWeakPwd(true); setTimeout(() => document.querySelector<HTMLFormElement>('form')?.requestSubmit(), 0); }}
+                className="w-full py-2 text-slate-500 hover:text-red-400 text-[10px] transition-colors font-medium"
+              >
+                Ignorer et créer quand même (à mes risques et périls)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

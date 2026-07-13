@@ -1,5 +1,5 @@
-// @ts-nocheck
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { saveFile } from '../../lib/download';
 import {
   Hexagon, Rotate3D, Download, Activity, Coins,
   Terminal, Sparkles, ChevronDown, Clock, RefreshCw, Film,
@@ -398,26 +398,23 @@ export const StudioForge3D = () => {
         {model && !isGenerating && (
           <div className="grid grid-cols-2 gap-2">
             {/* Télécharger GLB */}
-            <a
-              href={model.url}
-              download
-              onClick={() => setDownloaded(true)}
+            <button
+              onClick={async () => { await saveFile(model.url, `lea_3d_${Date.now()}.${model.format.toLowerCase()}`); setDownloaded(true); }}
               className={`py-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2
                 ${downloaded ? 'border-green-500/40 text-green-400 bg-green-500/5' : 'border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 active:scale-95'}`}
             >
               <Download size={13} />
               {downloaded ? '✓ Téléchargé' : `.${model.format.toLowerCase()}`}
-            </a>
+            </button>
 
             {/* Télécharger preview PNG */}
             {model.preview_url ? (
-              <a
-                href={model.preview_url}
-                download
+              <button
+                onClick={() => saveFile(model.preview_url, `lea_3d_preview_${Date.now()}.png`)}
                 className="py-3 rounded-xl border border-white/10 text-white/50 text-xs font-bold hover:bg-white/5 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 <Image size={13} />Preview .png
-              </a>
+              </button>
             ) : <div />}
 
             {/* Re-générer High-Poly */}

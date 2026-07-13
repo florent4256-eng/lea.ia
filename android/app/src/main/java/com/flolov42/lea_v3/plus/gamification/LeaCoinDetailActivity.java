@@ -17,22 +17,26 @@ import com.flolov42.lea_v3.database.*;
 import com.flolov42.lea_v3.notifications.*;
 import com.flolov42.lea_v3.utilities.*;
 
+import android.content.res.ColorStateList;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
 
 public class LeaCoinDetailActivity extends LeaFeatureDetailActivity {
 
-    private static final int BG    = 0xFF000D1A;
-    private static final int CARD  = 0xFF001A2E;
-    private static final int CARD2 = 0xFF00243F;
+    private static final int BG    = 0xFF020617;
+    private static final int CARD  = 0xFF0D1526;
+    private static final int CARD2 = 0xFF16233C;
     private static final int CYAN  = 0xFF00E5FF;
     private static final int GREEN = 0xFF10B981;
     private static final int GOLD  = 0xFFFFD700;
     private static final int WHITE = 0xFFFFFFFF;
     private static final int DIM   = 0xFF64748B;
     private static final int DIM2  = 0xFF94A3B8;
+    private static final int GLASS_BORDER = 0x1EFFFFFF;
 
     @Override protected String getFeatureId() { return LeaPlusDatabase.COINS; }
 
@@ -152,14 +156,16 @@ public class LeaCoinDetailActivity extends LeaFeatureDetailActivity {
     }
     private LinearLayout card(int w, int mt, int ml, int mb, int mr) {
         LinearLayout c = new LinearLayout(this); c.setOrientation(LinearLayout.VERTICAL);
-        c.setBackgroundColor(CARD);
+        c.setBackground(glassCard(dp(18), GLASS_BORDER));
+        c.setElevation(dp(2));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(w == -1 ? -1 : w, -2);
         lp.setMargins(ml, mt, mr, mb); c.setLayoutParams(lp);
         c.setPadding(dp(14), dp(12), dp(14), dp(12)); return c;
     }
     private LinearLayout miniStat(String icon, String val, String lbl, int color) {
         LinearLayout s = new LinearLayout(this); s.setOrientation(LinearLayout.VERTICAL);
-        s.setGravity(Gravity.CENTER); s.setBackgroundColor(CARD);
+        s.setGravity(Gravity.CENTER); s.setBackground(glassCard(dp(14), GLASS_BORDER));
+        s.setElevation(dp(2));
         s.setPadding(dp(8), dp(10), dp(8), dp(10));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1f);
         lp.setMargins(dp(3), 0, dp(3), 0); s.setLayoutParams(lp);
@@ -169,7 +175,13 @@ public class LeaCoinDetailActivity extends LeaFeatureDetailActivity {
         return s;
     }
     private Button wideBtn(String text, int tc, int bg) {
-        Button b = new Button(this); b.setText(text); b.setTextColor(tc); b.setBackgroundColor(bg);
+        Button b = new Button(this); b.setText(text); b.setTextColor(tc);
+        GradientDrawable gd = new GradientDrawable();
+        gd.setColor(bg);
+        gd.setCornerRadius(dp(14));
+        gd.setStroke(dp(1), tc);
+        b.setBackground(new RippleDrawable(ColorStateList.valueOf((tc & 0x00FFFFFF) | 0x55000000), gd, null));
+        b.setElevation(dp(1));
         b.setTextSize(12); b.setTypeface(null, Typeface.BOLD); b.setAllCaps(false);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(44));
         lp.setMargins(0, dp(6), 0, 0); b.setLayoutParams(lp); return b;
@@ -181,5 +193,14 @@ public class LeaCoinDetailActivity extends LeaFeatureDetailActivity {
     private View sep() {
         View v = new View(this); v.setBackgroundColor(CARD2);
         v.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(1))); return v;
+    }
+    /** Fond glassmorphism arrondi pour cartes locales (dégradé subtil + bordure translucide). */
+    private GradientDrawable glassCard(int radius, int borderColor) {
+        GradientDrawable gd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        gd.setCornerRadius(radius);
+        gd.setStroke(dp(1), borderColor);
+        return gd;
     }
 }

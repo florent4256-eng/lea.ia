@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import { useConfirmToast } from '../../hooks/useConfirmToast';
+import {
   Send, Paperclip, Plus, Mic, Copy, Video, Sparkles, ShieldCheck,
-  Play, Pause, Download,HelpCircle, Info, Box, Loader2, MapPin, Navigation, Heart, 
+  Play, Pause, Download, Share2, HelpCircle, Info, Box, Loader2, MapPin, Navigation, Heart,
   UserCheck, Bot, Cpu, Bitcoin, ChevronDown, TrendingUp, Music, Volume2, X, Square,
   ThumbsUp, ThumbsDown
 } from 'lucide-react';
+import { downloadFile, saveFile } from '../../lib/download';
 // --- NOUVEAUX COMPOSANTS (Effet d'écriture et Bouton Vocal) ---
 
 const TypewriterText = ({ text }: { text: string }) => {
@@ -182,9 +184,12 @@ const AudioPlayer = ({ src, title }: { src: string, title: string }) => {
           <Volume2 size={14} className="text-white/50 group-hover:text-white transition-colors" />
           <input type="range" min="0" max="1" step="0.05" value={volume} onChange={handleVolume} className="w-12 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#00f2ff]" />
         </div>
-        <a href={src} download={`Léa_Audio_${Date.now()}.mp3`} className="p-2 text-white/50 hover:text-white transition-colors">
+        <button onClick={() => saveFile(src, `Léa_Audio_${Date.now()}.mp3`)} className="p-2 text-white/50 hover:text-white transition-colors" title="Télécharger">
           <Download size={18} />
-        </a>
+        </button>
+        <button onClick={() => downloadFile(src, `Léa_Audio_${Date.now()}.mp3`)} className="p-2 text-white/50 hover:text-white transition-colors" title="Partager">
+          <Share2 size={16} />
+        </button>
       </div>
       <audio 
         ref={audioRef} src={src} autoPlay={false}
@@ -196,58 +201,123 @@ const AudioPlayer = ({ src, title }: { src: string, title: string }) => {
   );
 };
 
-const VideoPlayer = ({ src }: { src: string }) => {
+const VideoPlayer = ({ src, onFullscreen }: { src: string; onFullscreen?: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const togglePlay = () => {
-    if (isPlaying) videoRef.current?.pause();
-    else videoRef.current?.play();
-    setIsPlaying(!isPlaying);
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    if (isPlaying) { videoRef.current.pause(); setIsPlaying(false); }
+    else { videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {}); }
   };
 
+  const filename = `Léa_Video_${Date.now()}.mp4`;
+
   return (
-    <div className="w-full max-w-sm mt-2 rounded-2xl overflow-hidden border border-white/10 bg-black relative group">
-      <video ref={videoRef} src={src} className="w-full h-auto" onClick={togglePlay} onEnded={() => setIsPlaying(false)} />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-        <div className="flex items-center justify-between">
-          <button onClick={togglePlay} className="p-3 bg-[#00f2ff] text-black rounded-full hover:bg-white transition-colors">
-            {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
-          </button>
-          <a href={src} download={`Léa_Video_${Date.now()}.mp4`} className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl text-white hover:bg-white/20 transition-all font-bold text-xs uppercase tracking-widest">
-            <Download size={14} /> MP4
-          </a>
-        </div>
+    <div className="w-full max-w-sm mt-2 rounded-2xl overflow-hidden border border-white/10 bg-black">
+      <video
+        ref={videoRef}
+        src={src}
+        className="w-full h-auto cursor-zoom-in"
+        onClick={onFullscreen}
+        onEnded={() => setIsPlaying(false)}
+        playsInline
+      />
+      <div className="flex items-center gap-2 px-3 py-2 bg-black/60">
+        <button
+          onClick={togglePlay}
+          className="p-2 bg-[#00f2ff] text-black rounded-full hover:bg-white transition-colors shrink-0"
+        >
+          {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+        </button>
+        <div className="flex-1" />
+        <button
+          onClick={() => saveFile(src, filename)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00f2ff] text-black rounded-xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+        >
+          <Download size={13} /> Télécharger
+        </button>
+        <button
+          onClick={() => downloadFile(src, filename)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-white rounded-xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+        >
+          <Download size={13} /> Sauvegarder
+        </button>
       </div>
     </div>
   );
 };
 
-const ImageDisplay = ({ src }: { src: string }) => (
-  <div className="relative group w-full max-w-sm mt-2 rounded-2xl overflow-hidden border border-white/10">
+const ImageDisplay = ({ src, onClick }: { src: string; onClick: () => void }) => (
+  <div className="relative w-full max-w-sm mt-2 rounded-2xl overflow-hidden border border-white/10 cursor-zoom-in" onClick={onClick}>
     <img src={src} alt="Génération IA" className="w-full h-auto object-cover" />
-    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-      <a href={src} download={`Léa_Image_${Date.now()}.png`} className="flex items-center gap-2 px-6 py-3 bg-[#00f2ff] text-black rounded-xl font-bold uppercase tracking-widest shadow-[0_0_20px_rgba(0,242,255,0.4)] hover:scale-105 transition-all">
-        <Download size={18} /> Sauvegarder
-      </a>
+  </div>
+);
+
+const SchemaCard = ({ src }: { src: string }) => (
+  <div className="w-full max-w-lg mt-2 rounded-2xl overflow-hidden border border-purple-500/30 bg-white/5">
+    <div className="px-4 py-2 border-b border-white/10 flex items-center gap-2">
+      <span className="text-[10px] font-black uppercase tracking-widest text-purple-400">📐 Schéma Technique</span>
+    </div>
+    <img src={src} alt="Schéma technique" className="w-full h-auto object-contain bg-white p-2" />
+    <div className="px-4 py-3 flex gap-2 justify-end">
+      <button
+        onClick={() => saveFile(src, `Léa_Schéma_${Date.now()}.png`)}
+        className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_16px_rgba(168,85,247,0.4)]"
+      >
+        <Download size={14} /> Télécharger
+      </button>
+      <button
+        onClick={() => downloadFile(src, `Léa_Schéma_${Date.now()}.png`)}
+        className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-all"
+      >
+        <Share2 size={14} /> Partager
+      </button>
     </div>
   </div>
 );
 
-const Object3DCard = () => (
-  <div className="flex items-center justify-between w-64 sm:w-80 bg-gradient-to-br from-indigo-900/40 to-black/40 border border-indigo-500/30 p-4 rounded-2xl mt-2">
-    <div className="flex items-center gap-4">
-      <div className="p-3 bg-indigo-500/20 text-indigo-400 rounded-xl"><Box size={24} /></div>
-      <div>
-        <p className="text-sm font-bold text-white">Modèle 3D Généré</p>
-        <p className="text-[10px] text-indigo-400 uppercase tracking-widest">Fichier .STL prêt</p>
+const Object3DCard = ({ mediaUrl, vertices, faces }: { mediaUrl?: string, previewUrl?: string, vertices?: number, faces?: number }) => {
+  const base = (window as any).LEA_SERVER_URL || '';
+  const glbUrl = mediaUrl ? (mediaUrl.startsWith('http') ? mediaUrl : base + mediaUrl) : null;
+  return (
+    <div className="w-full max-w-sm mt-2 rounded-2xl overflow-hidden border border-indigo-500/30 bg-gradient-to-br from-indigo-900/30 to-black/40">
+      <div className="px-4 py-2 border-b border-white/10 flex items-center gap-2">
+        <Box size={14} className="text-indigo-400" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Modèle 3D — TripoSR</span>
+        {vertices && <span className="ml-auto text-[9px] text-slate-500">{vertices.toLocaleString()} sommets · {faces?.toLocaleString()} faces</span>}
+      </div>
+      {glbUrl ? (
+        /* @ts-ignore */
+        <model-viewer
+          src={glbUrl}
+          auto-rotate
+          camera-controls
+          shadow-intensity="1"
+          environment-image="neutral"
+          style={{ width: '100%', height: '260px', background: '#0a0a1a' }}
+        />
+      ) : (
+        <div className="w-full h-48 flex items-center justify-center bg-slate-900/40">
+          <Box size={48} className="text-indigo-400 opacity-30" />
+        </div>
+      )}
+      <div className="px-4 py-3 flex gap-2 justify-end">
+        {glbUrl && (<>
+          <button onClick={() => saveFile(glbUrl, `Léa_3D_${Date.now()}.glb`)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_16px_rgba(99,102,241,0.4)]">
+            <Download size={13} /> .GLB
+          </button>
+          <button onClick={() => downloadFile(glbUrl, `Léa_3D_${Date.now()}.glb`)}
+            className="flex items-center gap-2 px-3 py-2 bg-white/10 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-all">
+            <Share2 size={13} /> Partager
+          </button>
+        </>)}
       </div>
     </div>
-    <button className="p-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.4)]">
-      <Download size={18} />
-    </button>
-  </div>
-);
+  );
+};
 
 const MusicCard = ({ src }: { src: string }) => {
   const [playing, setPlaying] = React.useState(false);
@@ -271,9 +341,12 @@ const MusicCard = ({ src }: { src: string }) => {
           <p className="text-[11px] font-black text-fuchsia-300 uppercase tracking-widest">Musique générée</p>
           <p className="text-[10px] text-slate-500 font-mono">{fmt(current)} / {fmt(duration)}</p>
         </div>
-        <a href={src} download className="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center transition-all">
+        <button onClick={() => saveFile(src, `Léa_Musique_${Date.now()}.wav`)} className="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center transition-all" title="Télécharger">
           <Download size={13} className="text-slate-400" />
-        </a>
+        </button>
+        <button onClick={() => downloadFile(src, `Léa_Musique_${Date.now()}.wav`)} className="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center transition-all" title="Partager">
+          <Share2 size={13} className="text-slate-400" />
+        </button>
       </div>
       <div className="flex items-center gap-3">
         <button onClick={toggle} className="w-9 h-9 bg-fuchsia-500 hover:bg-fuchsia-400 text-white rounded-full flex items-center justify-center transition-all shrink-0 shadow-[0_0_12px_rgba(217,70,239,0.4)]">
@@ -301,6 +374,7 @@ const CryptoWidget = () => (<div className="w-64 sm:w-80 bg-gradient-to-br from-
 // ==========================================
 
 export const LeaTerminal = () => {
+  const { askConfirm, showToast, ConfirmToastHost } = useConfirmToast();
   const [messages, setMessages] = useState<any[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -310,6 +384,10 @@ export const LeaTerminal = () => {
   // États d'analyse universelle
   const [isGenerating, setIsGenerating] = useState(false);
   const [genData, setGenData] = useState({ text: 'Analyse en profondeur...', progress: 0 });
+
+  // Plein écran image / vidéo
+  const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
+  const [fullscreenVideo, setFullscreenVideo] = useState<string | null>(null);
 
   // États pour les périphériques réels
   const [isRecording, setIsRecording] = useState(false);
@@ -322,6 +400,7 @@ export const LeaTerminal = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const recordingTimerRef = useRef<number | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
 
   const currentUser = localStorage.getItem('lea_currentUser') || 'Invité';
 
@@ -440,11 +519,15 @@ export const LeaTerminal = () => {
       .then(data => {
         const formattedMessages = data.map((item: any) => {
           let msg = item.message || item;
-          // Correction dynamique des URL pour l'audio/image
+          // Correction dynamique des URL media (5G + chemins relatifs)
           if (msg.mediaUrl) {
+            const serverBase = (window as any).LEA_SERVER_URL || '';
             const base = `${window.location.protocol}//${window.location.host}`;
             msg.mediaUrl = msg.mediaUrl.replace(/https?:\/\/localhost:3001/g, base);
             msg.mediaUrl = msg.mediaUrl.replace(/https?:\/\/192\.168\.\d+\.\d+:3001/g, base);
+            if (msg.mediaUrl.startsWith('/') && serverBase) {
+              msg.mediaUrl = serverBase + msg.mediaUrl;
+            }
           }
           return msg;
         });
@@ -496,17 +579,26 @@ export const LeaTerminal = () => {
     const wsUrl = `${protocol}//${window.location.host}`;
     const ws = new WebSocket(wsUrl);
     
-    ws.onopen = () => { setSocket(ws); setIsConnected(true); };
+    ws.onopen = () => { setSocket(ws); socketRef.current = ws; setIsConnected(true); };
     ws.onclose = () => setIsConnected(false);
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      if (data.type === 'TRANSCRIPTION_RESULT') {
+        const text = (data.text || '').trim();
+        if (text) setInputText(prev => prev ? prev.trim() + ' ' + text : text);
+        return;
+      }
       if (data.type === 'CHAT' && data.message.sender !== currentUser) {
         
-        // Correction dynamique de la voix de Léa pour la 5G
+        // Correction dynamique des URL media (5G + chemins relatifs)
         if (data.message.mediaUrl) {
+            const serverBase = (window as any).LEA_SERVER_URL || '';
             const base = `${window.location.protocol}//${window.location.host}`;
             data.message.mediaUrl = data.message.mediaUrl.replace(/https?:\/\/localhost:3001/g, base);
             data.message.mediaUrl = data.message.mediaUrl.replace(/https?:\/\/192\.168\.\d+\.\d+:3001/g, base);
+            if (data.message.mediaUrl.startsWith('/') && serverBase) {
+                data.message.mediaUrl = serverBase + data.message.mediaUrl;
+            }
         }
         
         setIsGenerating(false);
@@ -544,31 +636,21 @@ export const LeaTerminal = () => {
 
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        
-        // Conversion du flux compressé en Base64 pour l'envoi blindé via WebSocket
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
           const base64Audio = reader.result;
-          
-          if (isConnected && socket) {
-            // Envoi direct au serveur sans passer par le texte
-            socket.send(JSON.stringify({
-              type: 'VOICE_CHAT',
+          const ws = socketRef.current;
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'VOICE_TRANSCRIBE_ONLY',
               sessionId: sessionId,
-              message: {
-                id: Date.now().toString(),
-                sender: currentUser,
-                audioData: base64Audio, // Le serveur va récupérer ça pour le TTS/Whisper
-                isMine: true
-              }
+              audioData: base64Audio,
+              sender: currentUser,
+              user: currentUser
             }));
-            
-            setIsGenerating(true);
-            setGenData({ text: 'Léa analyse ton flux vocal...', progress: 0 });
           }
         };
-        // On coupe le micro pour des raisons de sécurité
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -582,7 +664,7 @@ export const LeaTerminal = () => {
 
     } catch (err) {
       console.error("Accès micro refusé ou introuvable", err);
-      alert("Léa Protect : Accès au microphone refusé ou périphérique introuvable.");
+      showToast("Léa Protect : Accès au microphone refusé ou périphérique introuvable.");
     }
   };
 
@@ -709,14 +791,59 @@ export const LeaTerminal = () => {
         body: JSON.stringify({ username: currentUser, imageBase64: reader.result })
       });
       const data = await res.json();
-      if (data.success) { alert("🎉 " + data.message); setIsDouanePassed(true); }
-      else { alert("❌ " + data.error); }
+      if (data.success) { showToast("🎉 " + data.message); setIsDouanePassed(true); }
+      else { showToast("❌ " + data.error); }
       setDouaneLoading(false);
     };
   };
 
   return (
     <div className="flex h-screen w-full bg-transparent overflow-hidden">
+      <ConfirmToastHost />
+
+      {/* 🖼️ VISIONNEUSE PLEIN ÉCRAN */}
+      {fullscreenImg && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in duration-200"
+          onClick={() => setFullscreenImg(null)}
+        >
+          <button
+            onClick={() => setFullscreenImg(null)}
+            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full text-white transition-all active:scale-90"
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={fullscreenImg}
+            alt="Plein écran"
+            className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      {/* 🎬 VISIONNEUSE VIDÉO PLEIN ÉCRAN */}
+      {fullscreenVideo && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in duration-200"
+          onClick={() => setFullscreenVideo(null)}
+        >
+          <button
+            onClick={() => setFullscreenVideo(null)}
+            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full text-white transition-all active:scale-90 z-10"
+          >
+            <X size={20} />
+          </button>
+          <video
+            src={fullscreenVideo}
+            autoPlay
+            controls
+            playsInline
+            className="max-w-full max-h-full rounded-xl shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* 💬 ZONE DE CHAT */}
       <div className="flex-1 flex flex-col relative w-full h-full bg-transparent overflow-hidden">
@@ -749,17 +876,25 @@ export const LeaTerminal = () => {
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0 px-4 md:px-10 lg:px-64 pt-24 pb-8 flex flex-col custom-scrollbar scroll-smooth">
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-end pb-16 animate-in fade-in duration-1000">
-             <div className="relative inline-block mb-10">
-                <div className="absolute inset-0 bg-[#0047ff] blur-[120px] opacity-30 animate-pulse" />
-                <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-[2rem] bg-gradient-to-br from-[#0047ff] to-[#00f2ff] flex items-center justify-center shadow-[0_0_40px_rgba(0,242,255,0.4)] border border-white/20">
-                  <Sparkles size={48} className="text-white drop-shadow-lg" />
-                </div>
+             <div className="relative flex items-center justify-center w-32 h-32 mx-auto mb-8">
+               {/* Halo pulsant */}
+               <div className="absolute -inset-2 rounded-full opacity-25 blur-2xl animate-pulse"
+                 style={{ background: 'radial-gradient(circle, #00ffff 20%, #7c3aed 60%, transparent 80%)' }} />
+               {/* Logo Léa */}
+               <img
+                 src="/lea-logo.png"
+                 alt="Léa"
+                 className="relative z-10 w-24 h-24 rounded-3xl object-cover shadow-[0_0_35px_rgba(0,255,255,0.5)]"
+               />
              </div>
-             <h1 className="text-5xl sm:text-7xl md:text-8xl font-black mb-6 tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400">
-               LÉA <span className="text-[#00f2ff] drop-shadow-[0_0_15px_rgba(0,242,255,0.5)]">V3</span>
+             <h1
+               className="text-5xl sm:text-7xl md:text-8xl font-black mb-6 tracking-tighter text-white"
+               style={{ textShadow: '0 0 40px rgba(0,255,255,0.45), 0 0 90px rgba(0,255,255,0.15)' }}
+             >
+               LÉA
              </h1>
              <div className="flex items-center justify-center gap-3 opacity-60">
-               <ShieldCheck size={16} className="text-[#00f2ff]" /> 
+               <ShieldCheck size={16} className="text-[#00ffff]" />
                <span className="text-[10px] sm:text-xs md:text-sm uppercase tracking-[0.6em] font-bold text-slate-300 text-center">
                  Terminal {currentUser}<br className="sm:hidden" /> Instance Privée
                </span>
@@ -777,7 +912,7 @@ export const LeaTerminal = () => {
           </span>
         </div>
 
-        <div className={`relative w-max max-w-[90%] md:max-w-[85%] p-4 sm:p-5 rounded-3xl text-sm leading-relaxed ${msg.isMine ? 'bg-[#0047ff]/10 border border-[#0047ff]/30 text-white rounded-tr-none' : 'bg-white/0.05 border border-white/10 text-white rounded-tl-none'}`}>
+        <div className={`relative w-max max-w-[90%] md:max-w-[85%] p-4 sm:p-5 text-sm leading-relaxed ${msg.isMine ? 'bg-[#00ffff]/10 backdrop-blur-md border border-[#00ffff]/30 text-white rounded-2xl rounded-tr-sm shadow-[0_0_15px_rgba(0,255,255,0.1)]' : 'bg-[#0a0f24]/70 backdrop-blur-md border border-[#ff00ff]/20 text-gray-100 rounded-2xl rounded-tl-sm shadow-[0_0_15px_rgba(255,0,255,0.1)]'}`}>
           
           {/* TEXTE (En machine à écrire pour Léa) */}
           {msg.originalText && (
@@ -788,9 +923,32 @@ export const LeaTerminal = () => {
                   
                   {/* AFFICHAGE DES MÉDIAS */}
                   {msg.mediaType === 'audio' && <AudioPlayer src={msg.mediaUrl} title="Léa Audio" />}
-                  {msg.mediaType === 'video' && <VideoPlayer src={msg.mediaUrl} />}
-                  {msg.mediaType === 'image' && <ImageDisplay src={msg.mediaUrl} />}
-                  {msg.mediaType === '3d' && <Object3DCard />}
+                  {msg.mediaType === 'video' && <VideoPlayer src={msg.mediaUrl} onFullscreen={() => setFullscreenVideo(msg.mediaUrl!)} />}
+                  {msg.mediaType === 'image' && <>
+                    <ImageDisplay src={msg.mediaUrl} onClick={() => setFullscreenImg(msg.mediaUrl!)} />
+                    <div className="flex gap-2 mt-1 w-full max-w-sm">
+                      <button
+                        onClick={() => {
+                          const url = msg.mediaUrl!.startsWith('http') ? msg.mediaUrl! : `${window.location.origin}${msg.mediaUrl}`;
+                          saveFile(url, `Léa_Image_${Date.now()}.png`);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#00f2ff] text-black rounded-xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+                      >
+                        <Download size={13} /> Télécharger
+                      </button>
+                      <button
+                        onClick={() => {
+                          const url = msg.mediaUrl!.startsWith('http') ? msg.mediaUrl! : `${window.location.origin}${msg.mediaUrl}`;
+                          downloadFile(url, `Léa_Image_${Date.now()}.png`);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/10 text-white rounded-xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+                      >
+                        <Share2 size={13} /> Partager
+                      </button>
+                    </div>
+                  </>}
+                  {msg.mediaType === 'schema' && <SchemaCard src={msg.mediaUrl} />}
+                  {msg.mediaType === '3d' && <Object3DCard mediaUrl={msg.mediaUrl} previewUrl={(msg as any).previewUrl} vertices={(msg as any).vertices} faces={(msg as any).faces} />}
                   {msg.mediaType === 'music' && <MusicCard src={msg.mediaUrl} />}
                   
                   {msg.widgetType === 'maps' && <MapWidget />}
@@ -807,7 +965,7 @@ export const LeaTerminal = () => {
                         {/* POUCE HAUT */}
                         <button 
                           onClick={() => handleFeedback(index, true, msg.id)} 
-                          className={`p-1.5 rounded-md transition-all ${votes[msg.id] === 'up' ? 'text-emerald-400 bg-emerald-400/20 shadow-[0_0_10px_rgba(52,211,153,0.3)]' : 'text-white/20 hover:text-emerald-400 hover:bg-emerald-400/10'}`}
+                          className={`p-1.5 rounded-md transition-all duration-300 ${votes[msg.id] === 'up' ? 'text-emerald-400 bg-emerald-400/20 shadow-[0_0_10px_rgba(52,211,153,0.3)]' : 'text-white/40 hover:text-emerald-400 hover:scale-110 hover:drop-shadow-[0_0_5px_rgba(52,211,153,0.8)] hover:bg-emerald-400/10'}`}
                         >
                           <ThumbsUp className="w-3.5 h-3.5" />
                         </button>
@@ -815,7 +973,7 @@ export const LeaTerminal = () => {
                         {/* POUCE BAS */}
                         <button 
                           onClick={() => handleFeedback(index, false, msg.id)} 
-                          className={`p-1.5 rounded-md transition-all ${votes[msg.id] === 'down' ? 'text-red-400 bg-red-400/20 shadow-[0_0_10px_rgba(248,113,113,0.3)]' : 'text-white/20 hover:text-red-400 hover:bg-red-400/10'}`}
+                          className={`p-1.5 rounded-md transition-all duration-300 ${votes[msg.id] === 'down' ? 'text-red-400 bg-red-400/20 shadow-[0_0_10px_rgba(248,113,113,0.3)]' : 'text-white/40 hover:text-red-400 hover:scale-110 hover:drop-shadow-[0_0_5px_rgba(248,113,113,0.8)] hover:bg-red-400/10'}`}
                         >
                           <ThumbsDown className="w-3.5 h-3.5" />
                         </button>
@@ -830,16 +988,16 @@ export const LeaTerminal = () => {
                         <div className="w-px h-3 bg-white/10 mx-1"></div>
 
                         {/* COPIER (Version icône uniquement) */}
-                        <button 
+                        <button
                           onClick={() => {
                             navigator.clipboard.writeText(msg.originalText);
-                            // Petit effet visuel au clic
-                          }} 
-                          className="p-1.5 text-white/20 hover:text-[#00f2ff] hover:bg-[#00f2ff]/10 rounded-md transition-all"
+                          }}
+                          className="p-1.5 text-white/40 hover:text-[#00ffff] hover:scale-110 hover:drop-shadow-[0_0_5px_rgba(0,255,255,0.8)] hover:bg-[#00ffff]/10 rounded-md transition-all duration-300"
                           title="Copier le texte"
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
+
                       </div>
 
                       {/* PETIT INDICATEUR DE TEMPS À DROITE */}
@@ -894,15 +1052,15 @@ export const LeaTerminal = () => {
         )}
 
         <form onSubmit={handleSend} className="max-w-5xl mx-auto relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-[#0047ff] to-[#00f2ff] rounded-[32px] opacity-10 blur-lg group-hover:opacity-20 transition-opacity duration-500" />
-          <div className="relative bg-[#000b1e]/90 backdrop-blur-xl border border-white/10 rounded-[32px] p-1.5 sm:p-2 flex items-end gap-1 sm:gap-2 focus-within:border-[#00f2ff]/50 shadow-2xl transition-all duration-300">
+          <div className="absolute -inset-1 bg-gradient-to-r from-[#00ffff] to-[#7c3aed] rounded-2xl opacity-10 blur-lg group-hover:opacity-20 transition-opacity duration-500" />
+          <div className="relative bg-[#050A15]/60 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 sm:p-2 flex items-end gap-1 sm:gap-2 focus-within:border-[#00ffff]/40 shadow-[0_-5px_25px_rgba(0,0,0,0.5)] transition-all duration-300">
             
             {/* Bouton + : ouvre le sélecteur de fichiers (tous types, sans limite de taille) */}
             <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-2xl text-white/50 hover:text-[#00f2ff] hover:bg-[#00f2ff]/10 transition-all duration-200 mb-1"
+              className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-2xl text-white/50 hover:text-[#00ffff] hover:bg-[#00ffff]/10 hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(0,255,255,0.8)] transition-all duration-300 mb-1"
               title="Joindre un fichier"
             >
               <Plus className="w-5 h-5" strokeWidth={2.5} />
@@ -935,17 +1093,17 @@ export const LeaTerminal = () => {
             <div className="flex items-center gap-0.5 sm:gap-1 mb-1 mr-1">
               {/* Bouton Micro Opérationnel */}
               {isRecording ? (
-                <button type="button" onClick={stopRecording} className="p-2 sm:p-3 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors">
+                <button type="button" onClick={stopRecording} className="p-2 sm:p-3 text-red-500 animate-pulse drop-shadow-[0_0_8px_rgba(239,68,68,0.8)] hover:text-red-400 rounded-xl transition-all duration-300">
                   <Square className="w-5 h-5 fill-current" />
                 </button>
               ) : (
-                <button type="button" onClick={startRecording} className="p-2 sm:p-3 text-white/40 hover:text-red-400 transition-colors">
+                <button type="button" onClick={startRecording} className="p-2 sm:p-3 text-white/40 hover:text-[#00ffff] hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(0,255,255,0.8)] transition-all duration-300">
                   <Mic className="w-5 h-5" />
                 </button>
               )}
               
               {/* Bouton Caméra */}
-              <button type="button" onClick={toggleCamera} className={`p-2 sm:p-3 transition-colors hidden sm:block ${isCameraActive ? 'text-[#00f2ff] drop-shadow-[0_0_5px_#00f2ff]' : 'text-white/40 hover:text-yellow-400'}`}>
+              <button type="button" onClick={toggleCamera} className={`p-2 sm:p-3 transition-all duration-300 hidden sm:block ${isCameraActive ? 'text-[#00ffff] scale-110 drop-shadow-[0_0_8px_rgba(0,255,255,0.8)]' : 'text-white/40 hover:text-[#00ffff] hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(0,255,255,0.8)]'}`}>
                 <Video className="w-5 h-5" />
               </button>
               
@@ -963,7 +1121,7 @@ export const LeaTerminal = () => {
                 <button 
                   type="submit" 
                   disabled={(!inputText.trim() && !attachedFile) && !isRecording} 
-                  className={`p-3 sm:p-4 rounded-2xl transition-all duration-300 ${((inputText.trim() || attachedFile) && !isGenerating) || isRecording ? 'bg-[#0047ff] hover:bg-[#00f2ff] text-white font-bold shadow-[0_0_20px_rgba(0,242,255,0.4)] scale-100' : 'bg-white/5 text-white/20 scale-95 cursor-not-allowed'}`}
+                  className={`p-3 sm:p-4 rounded-2xl transition-all duration-300 ${((inputText.trim() || attachedFile) && !isGenerating) || isRecording ? 'bg-[#00ffff] hover:scale-110 text-black font-bold shadow-[0_0_20px_rgba(0,255,255,0.4)] hover:drop-shadow-[0_0_12px_rgba(0,255,255,0.9)] scale-100' : 'bg-white/5 text-white/20 scale-95 cursor-not-allowed'}`}
                 >
                   <Send className="w-5 h-5" />
                 </button>

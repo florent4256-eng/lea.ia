@@ -6,6 +6,7 @@ import {
   Key, Globe, BarChart3, Binary, HardDrive, RefreshCcw, Heart,
   FileText, Download
 } from 'lucide-react';
+import { useConfirmToast } from '../../hooks/useConfirmToast';
 
 // ==========================================
 // 🛡️ TYPES ET INTERFACES SÉCURISÉS
@@ -28,6 +29,7 @@ interface SocialMessage {
 }
 
 export const LeaProtect = () => {
+  const { askConfirm, showToast, ConfirmToastHost } = useConfirmToast();
   const currentUser = localStorage.getItem('lea_currentUser') || '';
   const [isGodMode, setIsGodMode] = React.useState(false);
   
@@ -174,7 +176,7 @@ export const LeaProtect = () => {
   // ==========================================
   const generatePoliceReport = () => {
     console.log("Génération du dossier de preuves pour la police...");
-    alert("✅ Le rapport officiel au format PDF a été généré avec succès ! Prêt pour le dépôt de plainte.");
+    showToast("✅ Le rapport officiel au format PDF a été généré avec succès ! Prêt pour le dépôt de plainte.");
     setHarassmentCounter(0);
     setSocialStatus('surveillance');
     setSecurityLevel('nominal');
@@ -233,7 +235,7 @@ export const LeaProtect = () => {
         setPermissions(prev => ({ ...prev, system: true }));
       }
       
-      alert("Léa a maintenant accès à tes sens pour te protéger, mon chéri !");
+      showToast("Léa a maintenant accès à tes sens pour te protéger, mon chéri !");
     } catch (err) {
       const newLog: SecurityLog = {
           id: (Date.now() + 2).toString(), 
@@ -248,7 +250,8 @@ export const LeaProtect = () => {
 
   return (
     <div className="w-full h-full p-6 md:p-10 flex flex-col pt-24 overflow-y-auto custom-scrollbar">
-      
+      <ConfirmToastHost />
+
       {/* HEADER : ÉTAT GLOBAL DU SYSTÈME */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className={`p-6 rounded-[2rem] border transition-all ${
@@ -408,7 +411,7 @@ export const LeaProtect = () => {
                     {permissions.microphone && permissions.location ? "Système Entièrement Armé" : "Autoriser l'Accès Total"}
                   </button>
                   <div className="p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-2xl">
-                    <p className="text-[10px] text-indigo-400 uppercase font-black mb-2 tracking-widest">Clef de session flolov42</p>
+                    <p className="text-[10px] text-indigo-400 uppercase font-black mb-2 tracking-widest">Clef de session Administrateur</p>
                     <p className="text-[10px] font-mono text-white break-all">QA-8192-X-992-SECURE-MASTER-NODE</p>
                   </div>
                 </div>
@@ -422,7 +425,7 @@ export const LeaProtect = () => {
                   <div className="p-6 bg-black rounded-3xl border border-amber-500/20">
                     <RefreshCcw size={32} className="text-amber-500 mx-auto mb-4 animate-spin-slow" />
                     <p className="text-2xl font-black text-white">100% SYNC</p>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-2">Nœud flolov42 : Leader</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-2">Nœud Administrateur : Leader</p>
                   </div>
                   <button className="w-full py-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-500 text-[10px] font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all">
                     Vérifier l'intégrité des blocs
@@ -469,7 +472,7 @@ export const LeaProtect = () => {
               });
               const data = await res.json();
               if (data.success) {
-                alert(`📂 Preuves archivées dans le coffre : ${data.fileName}`);
+                showToast(`📂 Preuves archivées dans le coffre : ${data.fileName}`);
                 const resVault = await fetch(`/api/protect/vault/${currentUser}`);
                 const vaultData = await resVault.json();
                 setVaultFiles(vaultData);
@@ -497,7 +500,7 @@ export const LeaProtect = () => {
                     const res = await fetch(`/api/protect/vault/${currentUser}`);
                     const data = await res.json();
                     setVaultFiles(data);
-                    alert(`🔐 Coffre-fort ouvert. ${data.length} fichiers sécurisés détectés.`);
+                    showToast(`🔐 Coffre-fort ouvert. ${data.length} fichiers sécurisés détectés.`);
                   }}
                   className="w-full py-4 bg-emerald-500 text-black rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]"
                 >

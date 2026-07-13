@@ -47,7 +47,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class UpdateActivity extends AppCompatActivity {
+// Renommée depuis UpdateActivity (2026-07-12) pour la distinguer de update.UpdatePromptActivity —
+// celle-ci est l'écran complet "Vérifier les mises à jour" ouvert manuellement depuis la sidebar
+// (halo animé, vérification/téléchargement/installation), pas le popup auto-déclenché en arrière-plan.
+public class UpdateCheckActivity extends AppCompatActivity {
 
     // ═══════════════════════════════════════════════════════════
     //  RÉSEAU — OkHttp IPv4 + retry

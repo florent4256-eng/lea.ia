@@ -2,10 +2,9 @@ package com.flolov42.lea_v3.maps;
 
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
-import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -28,14 +27,20 @@ import com.google.android.gms.location.Priority;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.osmdroid.config.Configuration;
-import org.osmdroid.tileprovider.tilesource.ITileSource;
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
-import org.osmdroid.tileprovider.tilesource.XYTileSource;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.Marker;
-import org.osmdroid.views.overlay.Polyline;
+import org.maplibre.android.MapLibre;
+import org.maplibre.android.camera.CameraPosition;
+import org.maplibre.android.camera.CameraUpdateFactory;
+import org.maplibre.android.geometry.LatLng;
+import org.maplibre.android.maps.MapLibreMap;
+import org.maplibre.android.maps.MapView;
+import org.maplibre.android.maps.OnMapReadyCallback;
+import org.maplibre.android.maps.Style;
+import org.maplibre.android.style.expressions.Expression;
+import org.maplibre.android.style.layers.CircleLayer;
+import org.maplibre.android.style.layers.FillExtrusionLayer;
+import org.maplibre.android.style.layers.LineLayer;
+import org.maplibre.android.style.layers.PropertyFactory;
+import org.maplibre.android.style.sources.GeoJsonSource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,48 +50,26 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class LeaMapsActivity extends AppCompatActivity {
 
     // ── réseau ────────────────────────────────────────────────────
     private OkHttpClient http;
+    private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-    // ── carte ─────────────────────────────────────────────────────
-    private MapView  mapView;
-    private Marker   locationMarker;
-    private Marker   destMarker;
-    private Polyline routeLine;
+    // ── carte (MapLibre Native — tuiles vectorielles OpenFreeMap) ──
+    private MapView       mapView;
+    private MapLibreMap   mapLibreMap;
+    private Style         mapStyle;
+    private boolean       styleReady = false;
 
-    // ── styles de carte ───────────────────────────────────────────
-    private static final ITileSource[] TILE_SOURCES = new ITileSource[]{
-        TileSourceFactory.MAPNIK,
-        new XYTileSource("Voyager", 0, 20, 256, ".png", new String[]{
-            "https://a.basemaps.cartocdn.com/rastertiles/voyager/",
-            "https://b.basemaps.cartocdn.com/rastertiles/voyager/",
-            "https://c.basemaps.cartocdn.com/rastertiles/voyager/"
-        }),
-        new XYTileSource("DarkMatter", 0, 20, 256, ".png", new String[]{
-            "https://a.basemaps.cartocdn.com/dark_all/",
-            "https://b.basemaps.cartocdn.com/dark_all/",
-            "https://c.basemaps.cartocdn.com/dark_all/"
-        }),
-        new XYTileSource("OpenTopo", 0, 17, 256, ".png", new String[]{
-            "https://a.tile.opentopomap.org/",
-            "https://b.tile.opentopomap.org/",
-            "https://c.tile.opentopomap.org/"
-        }),
-        TileSourceFactory.PUBLIC_TRANSPORT,
-        new XYTileSource("HOT", 0, 19, 256, ".png", new String[]{
-            "https://a.tile.openstreetmap.fr/hot/",
-            "https://b.tile.openstreetmap.fr/hot/"
-        }),
-    };
-    private static final String[] TILE_NAMES = {
-        "Standard", "Voyager", "Nuit", "Topographique", "Transport", "Humanitaire"
-    };
+    private static final String[] OPENFREEMAP_STYLES = {"liberty", "bright", "positron"};
+    private static final String[] TILE_NAMES = {"Liberty", "Bright", "Positron"};
     private int mapStyleIndex = 0;
 
     // ── GPS ───────────────────────────────────────────────────────
@@ -96,20 +79,22 @@ public class LeaMapsActivity extends AppCompatActivity {
     private boolean hasLocation = false;
 
     // ── UI : commun ───────────────────────────────────────────────
-    private TextView     gpsCoords;
-    private LinearLayout routePanel, weatherPanel;
-    private LinearLayout mapsTopBar;
-    private Button       tabLocate, tabRoute, tabWeather;
-    private Button       btnSOS;
-    private boolean      sosActive = false;
-    private String       serverHost;
+    private View          nightOverlay;
+    private TextView       gpsCoords;
+    private LinearLayout   routePanel, weatherPanel;
+    private LinearLayout   mapsTopBar;
+    private LinearLayout   leftControls;
+    private Button         tabLocate, tabRoute, tabWeather;
+    private Button         btnSOS;
+    private boolean        sosActive = false;
+    private String         serverHost;
 
     // ── UI : itinéraire (Waze style) ──────────────────────────────
     private TextView     routeOriginLabel;
     private EditText     routeDestInput;
     private Button       btnModeCar, btnModeWalk, btnModeBike;
     private LinearLayout routeSummaryBlock;
-    private TextView     navSummaryMin, navSummaryDist, navSummaryETA, routeDestLabel;
+    private TextView     navSummaryMin, navSummaryDist, navSummaryDistUnit, navSummaryETA, routeDestLabel;
     private TextView     routeHelpText;
     private Button       btnGo;
     private String       routeMode = "driving";
@@ -129,6 +114,15 @@ public class LeaMapsActivity extends AppCompatActivity {
     private double           navTotalDurMin = 0;
     private String           navDestName   = "";
 
+    // ── Itinéraire tracé (coordonnées conservées pour re-dessiner au chargement du style) ──
+    private List<double[]> currentRouteCoords = null;
+    private double destLat, destLon;
+    private String destLabel = "";
+    private boolean hasDest = false;
+
+    // ── Repères posés par appui long (façon Google Maps) ────────────
+    private final List<LatLng> longPressWaypoints = new ArrayList<>();
+
     // ── UI : paramètres ───────────────────────────────────────────
     private View     settingsOverlay;
     private Button   btnThemeDay, btnThemeNight, btnThemeAuto;
@@ -142,17 +136,61 @@ public class LeaMapsActivity extends AppCompatActivity {
     private TextView forecastDay1, forecastEmoji1, forecastTemp1;
     private TextView forecastDay2, forecastEmoji2, forecastTemp2;
 
+    // ── UI : vue 3D ─────────────────────────────────────────────────
+    private Button  btn3D;
+    private boolean is3D = false;
+
+    // ── UI : signalement communautaire (façon Waze) ────────────────
+    private LinearLayout reportMenu;
+    private Button        btnReportToggle;
+    private boolean        reportMenuOpen = false;
+    private final Handler  reportPollHandler = new Handler(Looper.getMainLooper());
+    private static final long REPORT_POLL_MS = 20000;
+    private String currentUser = "";
+
+    private static final java.util.Map<String, String> REPORT_COLORS = new java.util.HashMap<>();
+    private static final java.util.Map<String, String> REPORT_LABELS = new java.util.HashMap<>();
+    private static final java.util.Map<String, String> REPORT_EMOJI  = new java.util.HashMap<>();
+    static {
+        REPORT_COLORS.put("accident", "#ef4444");
+        REPORT_COLORS.put("radar",    "#f97316");
+        REPORT_COLORS.put("bouchon",  "#eab308");
+        REPORT_COLORS.put("obstacle", "#a855f7");
+        REPORT_COLORS.put("controle", "#3b82f6");
+        REPORT_COLORS.put("travaux",  "#f59e0b");
+
+        REPORT_LABELS.put("accident", "Accident");
+        REPORT_LABELS.put("radar",    "Radar");
+        REPORT_LABELS.put("bouchon",  "Bouchon");
+        REPORT_LABELS.put("obstacle", "Obstacle");
+        REPORT_LABELS.put("controle", "Contrôle");
+        REPORT_LABELS.put("travaux",  "Travaux");
+
+        REPORT_EMOJI.put("accident", "💥");
+        REPORT_EMOJI.put("radar",    "📷");
+        REPORT_EMOJI.put("bouchon",  "🚦");
+        REPORT_EMOJI.put("obstacle", "⚠️");
+        REPORT_EMOJI.put("controle", "👮");
+        REPORT_EMOJI.put("travaux",  "🚧");
+    }
+
+    // Cache local des signalements actifs (pour l'alerte de proximité, en plus de l'affichage carte)
+    private List<JSONObject> cachedReports = new ArrayList<>();
+    private final java.util.Set<String> alertedReportIds = new java.util.HashSet<>();
+    private static final double PROXIMITY_ALERT_METERS = 150;
+
     // ─────────────────────────────────────────────────────────────
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         try {
+        MapLibre.getInstance(this);
         super.onCreate(savedInstanceState);
-        Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
-        Configuration.getInstance().setUserAgentValue("LeaV3/1.0");
         setContentView(R.layout.activity_maps);
 
-        serverHost = getSharedPreferences("lea_prefs", MODE_PRIVATE)
-            .getString("server_host", "https://lea-bunker.lea-ia-local.com:3001");
+        SharedPreferences prefs = getSharedPreferences("lea_prefs", MODE_PRIVATE);
+        serverHost  = prefs.getString("server_host", "https://lea-bunker.lea-ia-local.com");
+        currentUser = getIntent().getStringExtra("currentUser");
+        if (currentUser == null) currentUser = "";
 
         http = new OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
@@ -175,15 +213,46 @@ public class LeaMapsActivity extends AppCompatActivity {
         }
     }
 
-    @Override protected void onResume()  { super.onResume();  if (mapView != null) mapView.onResume(); }
-    @Override protected void onPause()   { super.onPause();   if (mapView != null) { mapView.onPause(); stopGPS(); } }
-    @Override protected void onDestroy() { super.onDestroy(); if (mapView != null) mapView.onDetach(); stopGPS(); }
+    @Override protected void onResume()  {
+        super.onResume();
+        if (mapView != null) mapView.onResume();
+        fetchReports();
+        reportPollHandler.postDelayed(reportPollRunnable, REPORT_POLL_MS);
+    }
+    @Override protected void onPause()   {
+        super.onPause();
+        if (mapView != null) mapView.onPause();
+        stopGPS();
+        reportPollHandler.removeCallbacks(reportPollRunnable);
+    }
+    @Override protected void onDestroy() {
+        super.onDestroy();
+        if (mapView != null) mapView.onDestroy();
+        stopGPS();
+        reportPollHandler.removeCallbacks(reportPollRunnable);
+    }
+    @Override protected void onStart() { super.onStart(); if (mapView != null) mapView.onStart(); }
+    @Override protected void onStop()  { super.onStop();  if (mapView != null) mapView.onStop(); }
+    @Override public void onLowMemory() { super.onLowMemory(); if (mapView != null) mapView.onLowMemory(); }
+    @Override protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (mapView != null) mapView.onSaveInstanceState(outState);
+    }
+
+    private final Runnable reportPollRunnable = new Runnable() {
+        @Override public void run() {
+            fetchReports();
+            reportPollHandler.postDelayed(this, REPORT_POLL_MS);
+        }
+    };
 
     // ── bind ──────────────────────────────────────────────────────
     private void bindViews() {
         mapView          = findViewById(R.id.mapView);
+        nightOverlay     = findViewById(R.id.nightOverlay);
         gpsCoords        = findViewById(R.id.gpsCoords);
         mapsTopBar       = findViewById(R.id.mapsTopBar);
+        leftControls     = findViewById(R.id.leftControls);
         routePanel       = findViewById(R.id.routePanel);
         weatherPanel     = findViewById(R.id.weatherPanel);
         bottomBar        = findViewById(R.id.bottomBar);
@@ -194,6 +263,7 @@ public class LeaMapsActivity extends AppCompatActivity {
         tabRoute         = findViewById(R.id.tabRoute);
         tabWeather       = findViewById(R.id.tabWeather);
         btnSOS           = findViewById(R.id.btnSOS);
+        btn3D            = findViewById(R.id.btn3D);
 
         btnModeCar  = findViewById(R.id.btnModeCar);
         btnModeWalk = findViewById(R.id.btnModeWalk);
@@ -203,6 +273,7 @@ public class LeaMapsActivity extends AppCompatActivity {
         routeSummaryBlock = findViewById(R.id.routeSummaryBlock);
         navSummaryMin     = findViewById(R.id.navSummaryMin);
         navSummaryDist    = findViewById(R.id.navSummaryDist);
+        navSummaryDistUnit = findViewById(R.id.navSummaryDistUnit);
         navSummaryETA     = findViewById(R.id.navSummaryETA);
         routeDestLabel    = findViewById(R.id.routeDestLabel);
         btnGo             = findViewById(R.id.btnGo);
@@ -244,6 +315,9 @@ public class LeaMapsActivity extends AppCompatActivity {
         btnThemeAuto     = findViewById(R.id.btnThemeAuto);
         themeDescription = findViewById(R.id.themeDescription);
 
+        reportMenu      = findViewById(R.id.reportMenu);
+        btnReportToggle = findViewById(R.id.btnReportToggle);
+
         ImageButton back = findViewById(R.id.mapsBack);
         back.setOnClickListener(v -> {
             if (isNavigating) stopNavigation();
@@ -253,10 +327,285 @@ public class LeaMapsActivity extends AppCompatActivity {
 
     // ── carte ─────────────────────────────────────────────────────
     private void setupMap() {
-        mapView.setTileSource(TILE_SOURCES[0]);
-        mapView.setMultiTouchControls(true);
-        mapView.getController().setZoom(13.0);
-        mapView.getController().setCenter(new GeoPoint(46.6, 2.0));
+        mapView.onCreate(null);
+        mapView.getMapAsync(new OnMapReadyCallback() {
+            @Override
+            public void onMapReady(MapLibreMap map) {
+                mapLibreMap = map;
+                map.setCameraPosition(new CameraPosition.Builder()
+                    .target(new LatLng(46.6, 2.0))
+                    .zoom(6.0)
+                    .build());
+                loadStyle(mapStyleIndex);
+
+                // Appui long sur la carte = pose un repère, façon Google Maps
+                map.addOnMapLongClickListener(latLng -> {
+                    addWaypoint(latLng);
+                    return true;
+                });
+
+                // Appui simple sur un signalement = voir/confirmer/retirer, façon Waze
+                map.addOnMapClickListener(latLng -> {
+                    handleMapTap(latLng);
+                    return false;
+                });
+            }
+        });
+    }
+
+    private void loadStyle(int idx) {
+        if (mapLibreMap == null) return;
+        String url = "https://tiles.openfreemap.org/styles/" + OPENFREEMAP_STYLES[idx];
+        styleReady = false;
+        mapLibreMap.setStyle(new Style.Builder().fromUri(url), style -> {
+            mapStyle = style;
+            styleReady = true;
+            setup3DBuildingsLayer(style);
+            setupRouteLayer(style);
+            setupUserLocationLayer(style);
+            setupReportsLayer(style);
+            setupWaypointsLayer(style);
+            // Re-appliquer l'état courant après un (re)chargement de style
+            if (is3D) apply3D(true);
+            if (hasLocation) updateLocationLayer();
+            if (currentRouteCoords != null) drawRouteLayer(currentRouteCoords);
+            if (hasDest) updateDestLayer();
+            updateWaypointsLayer();
+            fetchReports();
+        });
+    }
+
+    // Couche bâtiments 3D — masquée par défaut. Dans un try/catch : si le schéma de
+    // tuiles d'un style donné ne fournit pas la source-layer 'building', on ne casse
+    // pas toute la carte pour autant, on perd juste la 3D sur ce style.
+    private void setup3DBuildingsLayer(Style style) {
+        try {
+            if (style.getLayer("lea-3d-buildings") != null) return;
+            FillExtrusionLayer layer = new FillExtrusionLayer("lea-3d-buildings", "openmaptiles");
+            layer.setSourceLayer("building");
+            layer.setMinZoom(14f);
+            layer.setProperties(
+                PropertyFactory.fillExtrusionColor("#3b4a6b"),
+                PropertyFactory.fillExtrusionHeight(
+                    Expression.coalesce(Expression.get("render_height"), Expression.literal(12f))),
+                PropertyFactory.fillExtrusionOpacity(0.85f),
+                PropertyFactory.visibility(is3D ? "visible" : "none")
+            );
+            style.addLayer(layer);
+        } catch (Exception e) {
+            android.util.Log.w("LeaMaps", "Couche 3D indisponible sur ce style : " + e.getMessage());
+        }
+    }
+
+    // ── Source/couche position utilisateur ─────────────────────────
+    private void setupUserLocationLayer(Style style) {
+        if (style.getSource("lea-user-location") == null) {
+            style.addSource(new GeoJsonSource("lea-user-location", emptyFeatureCollection()));
+        }
+        if (style.getLayer("lea-user-location-layer") == null) {
+            CircleLayer layer = new CircleLayer("lea-user-location-layer", "lea-user-location");
+            layer.setProperties(
+                PropertyFactory.circleRadius(8f),
+                PropertyFactory.circleColor("#00ffff"),
+                PropertyFactory.circleStrokeColor("#ffffff"),
+                PropertyFactory.circleStrokeWidth(3f)
+            );
+            style.addLayer(layer);
+        }
+        if (style.getSource("lea-dest") == null) {
+            style.addSource(new GeoJsonSource("lea-dest", emptyFeatureCollection()));
+        }
+        if (style.getLayer("lea-dest-layer") == null) {
+            CircleLayer layer = new CircleLayer("lea-dest-layer", "lea-dest");
+            layer.setProperties(
+                PropertyFactory.circleRadius(9f),
+                PropertyFactory.circleColor("#ef4444"),
+                PropertyFactory.circleStrokeColor("#ffffff"),
+                PropertyFactory.circleStrokeWidth(3f)
+            );
+            style.addLayer(layer);
+        }
+    }
+
+    private void setupRouteLayer(Style style) {
+        if (style.getSource("lea-route") == null) {
+            style.addSource(new GeoJsonSource("lea-route", emptyFeatureCollection()));
+        }
+        if (style.getLayer("lea-route-layer") == null) {
+            LineLayer layer = new LineLayer("lea-route-layer", "lea-route");
+            layer.setProperties(
+                PropertyFactory.lineColor("#33CCFF"),
+                PropertyFactory.lineWidth(6f),
+                PropertyFactory.lineCap("round"),
+                PropertyFactory.lineJoin("round")
+            );
+            style.addLayerBelow(layer, "lea-user-location-layer");
+        }
+    }
+
+    private void setupReportsLayer(Style style) {
+        if (style.getSource("lea-reports") == null) {
+            style.addSource(new GeoJsonSource("lea-reports", emptyFeatureCollection()));
+        }
+        if (style.getLayer("lea-reports-layer") == null) {
+            CircleLayer layer = new CircleLayer("lea-reports-layer", "lea-reports");
+            layer.setProperties(
+                PropertyFactory.circleRadius(9f),
+                PropertyFactory.circleColor(Expression.get("color")),
+                PropertyFactory.circleStrokeColor("#ffffff"),
+                PropertyFactory.circleStrokeWidth(2f)
+            );
+            style.addLayer(layer);
+        }
+    }
+
+    private void setupWaypointsLayer(Style style) {
+        if (style.getSource("lea-waypoints") == null) {
+            style.addSource(new GeoJsonSource("lea-waypoints", emptyFeatureCollection()));
+        }
+        if (style.getLayer("lea-waypoints-layer") == null) {
+            CircleLayer layer = new CircleLayer("lea-waypoints-layer", "lea-waypoints");
+            layer.setProperties(
+                PropertyFactory.circleRadius(10f),
+                PropertyFactory.circleColor("#38BDF8"),
+                PropertyFactory.circleStrokeColor("#ffffff"),
+                PropertyFactory.circleStrokeWidth(3f)
+            );
+            style.addLayer(layer);
+        }
+    }
+
+    // ── Repères par appui long (façon Google Maps) ─────────────────
+    // Chaque appui long ajoute un repère et ouvre le panneau itinéraire — l'utilisateur
+    // choisit ensuite le mode (voiture/marche/vélo) et appuie sur "Calculer" pour lancer
+    // le calcul (pas de calcul automatique immédiat, pour laisser le choix du mode).
+    private void addWaypoint(LatLng point) {
+        longPressWaypoints.add(point);
+        updateWaypointsLayer();
+        Toast.makeText(this, "Repère " + longPressWaypoints.size() + " posé — choisis un mode puis Calculer",
+            Toast.LENGTH_SHORT).show();
+
+        if (!hasLocation) {
+            Toast.makeText(this, "GPS non disponible — impossible de calculer l'itinéraire", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        showPanel(1);
+        routeHelpText.setText(longPressWaypoints.size() == 1
+            ? "1 repère posé — choisis un mode puis appuie sur Calculer"
+            : longPressWaypoints.size() + " repères posés — choisis un mode puis appuie sur Calculer");
+        routeHelpText.setVisibility(View.VISIBLE);
+    }
+
+    // Lance le calcul pour les repères posés par appui long (GPS → repère 1 → repère 2 → ...)
+    private void calculateWaypointRoute() {
+        List<LatLng> routePoints = new ArrayList<>();
+        routePoints.add(new LatLng(currentLat, currentLon));
+        routePoints.addAll(longPressWaypoints);
+        String label = longPressWaypoints.size() == 1
+            ? "Repère"
+            : longPressWaypoints.size() + " repères";
+        fetchMultiPointRoute(routePoints, label);
+    }
+
+    private void updateWaypointsLayer() {
+        if (!styleReady || mapStyle == null) return;
+        GeoJsonSource src = mapStyle.getSourceAs("lea-waypoints");
+        if (src == null) return;
+        StringBuilder features = new StringBuilder();
+        for (LatLng p : longPressWaypoints) {
+            if (features.length() > 0) features.append(",");
+            features.append("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[")
+                .append(p.getLongitude()).append(",").append(p.getLatitude())
+                .append("]},\"properties\":{}}");
+        }
+        src.setGeoJson("{\"type\":\"FeatureCollection\",\"features\":[" + features + "]}");
+    }
+
+    private void clearWaypoints() {
+        longPressWaypoints.clear();
+        updateWaypointsLayer();
+    }
+
+    private String emptyFeatureCollection() {
+        return "{\"type\":\"FeatureCollection\",\"features\":[]}";
+    }
+
+    private void updateLocationLayer() {
+        if (!styleReady || mapStyle == null) return;
+        GeoJsonSource src = mapStyle.getSourceAs("lea-user-location");
+        if (src == null) return;
+        String geojson = "{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\","
+            + "\"geometry\":{\"type\":\"Point\",\"coordinates\":[" + currentLon + "," + currentLat + "]},"
+            + "\"properties\":{}}]}";
+        src.setGeoJson(geojson);
+    }
+
+    private void updateDestLayer() {
+        if (!styleReady || mapStyle == null) return;
+        GeoJsonSource src = mapStyle.getSourceAs("lea-dest");
+        if (src == null) return;
+        String geojson = "{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\","
+            + "\"geometry\":{\"type\":\"Point\",\"coordinates\":[" + destLon + "," + destLat + "]},"
+            + "\"properties\":{}}]}";
+        src.setGeoJson(geojson);
+    }
+
+    private void clearDestLayer() {
+        hasDest = false;
+        if (!styleReady || mapStyle == null) return;
+        GeoJsonSource src = mapStyle.getSourceAs("lea-dest");
+        if (src != null) src.setGeoJson(emptyFeatureCollection());
+    }
+
+    private void drawRouteLayer(List<double[]> coords) {
+        if (!styleReady || mapStyle == null) return;
+        GeoJsonSource src = mapStyle.getSourceAs("lea-route");
+        if (src == null) return;
+        StringBuilder coordsStr = new StringBuilder();
+        for (int i = 0; i < coords.size(); i++) {
+            double[] c = coords.get(i);
+            if (i > 0) coordsStr.append(",");
+            coordsStr.append("[").append(c[1]).append(",").append(c[0]).append("]"); // [lon,lat]
+        }
+        String geojson = "{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\","
+            + "\"geometry\":{\"type\":\"LineString\",\"coordinates\":[" + coordsStr + "]},"
+            + "\"properties\":{}}]}";
+        src.setGeoJson(geojson);
+    }
+
+    private void clearRouteLayer() {
+        currentRouteCoords = null;
+        if (!styleReady || mapStyle == null) return;
+        GeoJsonSource src = mapStyle.getSourceAs("lea-route");
+        if (src != null) src.setGeoJson(emptyFeatureCollection());
+    }
+
+    // ── Vue 3D ────────────────────────────────────────────────────
+    private void toggle3D() {
+        is3D = !is3D;
+        apply3D(true);
+        btn3D.setBackground(androidx.core.content.ContextCompat.getDrawable(this,
+            is3D ? R.drawable.lea_map_btn_active_bg : R.drawable.lea_map_btn_bg));
+        btn3D.setTextColor(is3D ? 0xFFFFFFFF : 0xFF93C5FD);
+    }
+
+    private void apply3D(boolean animate) {
+        if (mapLibreMap == null) return;
+        try {
+            CameraPosition current = mapLibreMap.getCameraPosition();
+            CameraPosition target = new CameraPosition.Builder(current)
+                .tilt(is3D ? 60 : 0)
+                .build();
+            if (animate) mapLibreMap.animateCamera(CameraUpdateFactory.newCameraPosition(target), 600);
+            else mapLibreMap.setCameraPosition(target);
+
+            if (mapStyle != null && mapStyle.getLayer("lea-3d-buildings") != null) {
+                mapStyle.getLayer("lea-3d-buildings")
+                    .setProperties(PropertyFactory.visibility(is3D ? "visible" : "none"));
+            }
+        } catch (Exception e) {
+            android.util.Log.w("LeaMaps", "Bascule 3D échouée : " + e.getMessage());
+        }
     }
 
     // ── GPS ───────────────────────────────────────────────────────
@@ -294,15 +643,8 @@ public class LeaMapsActivity extends AppCompatActivity {
     }
 
     private void updateLocationOnMap() {
-        GeoPoint pos = new GeoPoint(currentLat, currentLon);
-        if (locationMarker == null) {
-            locationMarker = new Marker(mapView);
-            locationMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            locationMarker.setTitle("Ma position");
-            mapView.getOverlays().add(locationMarker);
-        }
-        locationMarker.setPosition(pos);
-        mapView.invalidate();
+        updateLocationLayer();
+        checkReportsProximity();
 
         String coordText = String.format("%.4f, %.4f", currentLat, currentLon);
         gpsCoords.setText(coordText);
@@ -326,10 +668,8 @@ public class LeaMapsActivity extends AppCompatActivity {
     private void setupListeners() {
         tabLocate.setOnClickListener(v -> {
             showPanel(0);
-            if (hasLocation) {
-                mapView.getController().animateTo(new GeoPoint(currentLat, currentLon));
-                mapView.getController().setZoom(15.0);
-            } else Toast.makeText(this, "GPS en attente...", Toast.LENGTH_SHORT).show();
+            if (hasLocation) centerCamera(currentLat, currentLon, 15.0);
+            else Toast.makeText(this, "GPS en attente...", Toast.LENGTH_SHORT).show();
         });
 
         tabRoute.setOnClickListener(v -> showPanel(1));
@@ -340,20 +680,22 @@ public class LeaMapsActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnCenter).setOnClickListener(v -> {
-            if (hasLocation) {
-                mapView.getController().animateTo(new GeoPoint(currentLat, currentLon));
-                mapView.getController().setZoom(15.0);
-            } else Toast.makeText(this, "GPS en cours...", Toast.LENGTH_SHORT).show();
+            if (hasLocation) centerCamera(currentLat, currentLon, 15.0);
+            else Toast.makeText(this, "GPS en cours...", Toast.LENGTH_SHORT).show();
         });
 
-        findViewById(R.id.btnZoomIn).setOnClickListener(v -> mapView.getController().zoomIn());
-        findViewById(R.id.btnZoomOut).setOnClickListener(v -> mapView.getController().zoomOut());
+        findViewById(R.id.btnZoomIn).setOnClickListener(v -> {
+            if (mapLibreMap != null) mapLibreMap.animateCamera(CameraUpdateFactory.zoomBy(1));
+        });
+        findViewById(R.id.btnZoomOut).setOnClickListener(v -> {
+            if (mapLibreMap != null) mapLibreMap.animateCamera(CameraUpdateFactory.zoomBy(-1));
+        });
+
+        btn3D.setOnClickListener(v -> toggle3D());
 
         findViewById(R.id.btnStyleCycle).setOnClickListener(v -> {
-            mapStyleIndex = (mapStyleIndex + 1) % TILE_SOURCES.length;
-            mapView.setTileSource(TILE_SOURCES[mapStyleIndex]);
-            mapView.getTileProvider().clearTileCache();
-            mapView.invalidate();
+            mapStyleIndex = (mapStyleIndex + 1) % OPENFREEMAP_STYLES.length;
+            loadStyle(mapStyleIndex);
             Toast.makeText(this, "Carte : " + TILE_NAMES[mapStyleIndex], Toast.LENGTH_SHORT).show();
         });
 
@@ -373,11 +715,15 @@ public class LeaMapsActivity extends AppCompatActivity {
         btnModeWalk.setOnClickListener(v -> setRouteMode("walking"));
         btnModeBike.setOnClickListener(v -> setRouteMode("cycling"));
 
-        // Calcul itinéraire
+        // Calcul itinéraire — priorité aux repères posés par appui long, sinon la destination tapée
         findViewById(R.id.btnCalculateRoute).setOnClickListener(v -> {
+            if (!hasLocation) { Toast.makeText(this, "GPS non disponible", Toast.LENGTH_SHORT).show(); return; }
+            if (!longPressWaypoints.isEmpty()) {
+                calculateWaypointRoute();
+                return;
+            }
             String dest = routeDestInput.getText().toString().trim();
-            if (dest.isEmpty()) { Toast.makeText(this, "Entrez une destination", Toast.LENGTH_SHORT).show(); return; }
-            if (!hasLocation)   { Toast.makeText(this, "GPS non disponible",     Toast.LENGTH_SHORT).show(); return; }
+            if (dest.isEmpty()) { Toast.makeText(this, "Entrez une destination ou appuie longuement sur la carte", Toast.LENGTH_SHORT).show(); return; }
             geocodeAndRoute(dest);
         });
         routeDestInput.setOnEditorActionListener((v, actionId, event) -> {
@@ -397,6 +743,23 @@ public class LeaMapsActivity extends AppCompatActivity {
 
         // Actualiser météo
         findViewById(R.id.btnRefreshWeather).setOnClickListener(v -> fetchWeatherWithFallback());
+
+        // Signalement communautaire
+        btnReportToggle.setOnClickListener(v -> {
+            reportMenuOpen = !reportMenuOpen;
+            reportMenu.setVisibility(reportMenuOpen ? View.VISIBLE : View.GONE);
+        });
+        findViewById(R.id.reportAccident).setOnClickListener(v -> submitReport("accident"));
+        findViewById(R.id.reportRadar).setOnClickListener(v -> submitReport("radar"));
+        findViewById(R.id.reportBouchon).setOnClickListener(v -> submitReport("bouchon"));
+        findViewById(R.id.reportObstacle).setOnClickListener(v -> submitReport("obstacle"));
+        findViewById(R.id.reportControle).setOnClickListener(v -> submitReport("controle"));
+        findViewById(R.id.reportTravaux).setOnClickListener(v -> submitReport("travaux"));
+    }
+
+    private void centerCamera(double lat, double lon, double zoom) {
+        if (mapLibreMap == null) return;
+        mapLibreMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), zoom));
     }
 
     // ── mode transport ────────────────────────────────────────────
@@ -437,10 +800,14 @@ public class LeaMapsActivity extends AppCompatActivity {
         navStepIdx    = 0;
 
         // Masquer top bar et bottom bar, afficher barres nav
+        // leftControls (3D/zoom/style/SOS) masqué aussi — sinon il se retrouve mal
+        // positionné une fois mapsTopBar caché et peut recouvrir la croix "arrêter".
         mapsTopBar.setVisibility(View.GONE);
         routePanel.setVisibility(View.GONE);
         weatherPanel.setVisibility(View.GONE);
         bottomBar.setVisibility(View.GONE);
+        btnReportToggle.setVisibility(View.GONE);
+        leftControls.setVisibility(View.GONE);
 
         navInstructionBar.setVisibility(View.VISIBLE);
         navBottomBar.setVisibility(View.VISIBLE);
@@ -461,10 +828,7 @@ public class LeaMapsActivity extends AppCompatActivity {
         updateNavStep();
 
         // Centrer sur la position
-        if (hasLocation) {
-            mapView.getController().animateTo(new GeoPoint(currentLat, currentLon));
-            mapView.getController().setZoom(16.0);
-        }
+        if (hasLocation) centerCamera(currentLat, currentLon, 16.0);
     }
 
     private void stopNavigation() {
@@ -475,6 +839,8 @@ public class LeaMapsActivity extends AppCompatActivity {
 
         mapsTopBar.setVisibility(View.VISIBLE);
         bottomBar.setVisibility(View.VISIBLE);
+        btnReportToggle.setVisibility(View.VISIBLE);
+        leftControls.setVisibility(View.VISIBLE);
 
         clearRoute();
         showPanel(0);
@@ -536,27 +902,22 @@ public class LeaMapsActivity extends AppCompatActivity {
         updateThemeButtons();
     }
 
+    // Le mode nuit est un calque DOM superposé (nightOverlay), jamais un filtre posé
+    // sur le rendu GL lui-même — un filtre CSS/GL cassait le rendu sur certains GPU
+    // mobiles (bug corrigé sur la version web, appliqué ici dès le départ).
     private void applyTheme(String mode) {
+        boolean isNight;
         switch (mode) {
-            case "day":
-                mapView.setTileSource(TILE_SOURCES[1]);
-                mapStyleIndex = 1;
-                break;
-            case "night":
-                mapView.setTileSource(TILE_SOURCES[2]);
-                mapStyleIndex = 2;
-                break;
+            case "day":   isNight = false; break;
+            case "night": isNight = true;  break;
             case "auto":
             default:
                 int uiMode = getResources().getConfiguration().uiMode
                     & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
-                boolean isNight = (uiMode == android.content.res.Configuration.UI_MODE_NIGHT_YES);
-                mapView.setTileSource(TILE_SOURCES[isNight ? 2 : 1]);
-                mapStyleIndex = isNight ? 2 : 1;
+                isNight = (uiMode == android.content.res.Configuration.UI_MODE_NIGHT_YES);
                 break;
         }
-        mapView.getTileProvider().clearTileCache();
-        mapView.invalidate();
+        nightOverlay.setVisibility(isNight ? View.VISIBLE : View.GONE);
     }
 
     private void updateThemeButtons() {
@@ -573,8 +934,8 @@ public class LeaMapsActivity extends AppCompatActivity {
 
         String desc;
         switch (mapThemeMode) {
-            case "day":   desc = "Carte claire — Voyager (CartoDB)"; break;
-            case "night": desc = "Carte sombre — Dark Matter (CartoDB)"; break;
+            case "day":   desc = "Carte claire forcée"; break;
+            case "night": desc = "Carte sombre forcée"; break;
             default:
                 int uiMode = getResources().getConfiguration().uiMode
                     & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
@@ -589,7 +950,7 @@ public class LeaMapsActivity extends AppCompatActivity {
     private void triggerSOS() {
         sosActive = !sosActive;
         if (sosActive) {
-            btnSOS.setBackgroundColor(0xFFDC2626);
+            btnSOS.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFDC2626));
             btnSOS.setText("SOS ●");
             Toast.makeText(this, "SOS activé — envoi position à Léa", Toast.LENGTH_SHORT).show();
             String coords = hasLocation ? String.format("%.6f,%.6f", currentLat, currentLon) : "inconnue";
@@ -599,8 +960,193 @@ public class LeaMapsActivity extends AppCompatActivity {
                     @Override public void onResponse(Call c, Response r) { r.close(); }
                 });
         } else {
-            btnSOS.setBackgroundColor(0xCC7F1D1D);
+            btnSOS.setBackgroundTintList(null);
             btnSOS.setText("SOS");
+        }
+    }
+
+    // ── Signalement communautaire (façon Waze) ─────────────────────
+    private void submitReport(String type) {
+        reportMenuOpen = false;
+        reportMenu.setVisibility(View.GONE);
+
+        if (!hasLocation) {
+            Toast.makeText(this, "Position GPS requise pour signaler.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            JSONObject body = new JSONObject();
+            body.put("username", currentUser);
+            body.put("type", type);
+            body.put("lat", currentLat);
+            body.put("lng", currentLon);
+
+            RequestBody reqBody = RequestBody.create(body.toString(), JSON);
+            http.newCall(new Request.Builder()
+                .url(serverHost + "/api/maps/report")
+                .post(reqBody)
+                .build())
+                .enqueue(new Callback() {
+                    @Override public void onFailure(Call c, IOException e) {
+                        runOnUiThread(() -> Toast.makeText(LeaMapsActivity.this,
+                            "Échec de l'envoi du signalement.", Toast.LENGTH_SHORT).show());
+                    }
+                    @Override public void onResponse(Call c, Response r) {
+                        r.close();
+                        runOnUiThread(() -> {
+                            Toast.makeText(LeaMapsActivity.this, "Signalé !", Toast.LENGTH_SHORT).show();
+                            fetchReports();
+                        });
+                    }
+                });
+        } catch (Exception e) {
+            Toast.makeText(this, "Erreur : " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void fetchReports() {
+        String url = serverHost + "/api/maps/reports?username=" + currentUser;
+        http.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
+            @Override public void onFailure(Call c, IOException e) { /* silencieux — pas critique */ }
+            @Override public void onResponse(Call c, Response r) {
+                if (!r.isSuccessful() || r.body() == null) { r.close(); return; }
+                try {
+                    JSONArray reports = new JSONArray(r.body().string());
+                    List<JSONObject> freshList = new ArrayList<>();
+                    StringBuilder features = new StringBuilder();
+                    for (int i = 0; i < reports.length(); i++) {
+                        JSONObject rep = reports.getJSONObject(i);
+                        freshList.add(rep);
+                        String id    = rep.optString("id", "");
+                        String type  = rep.optString("type", "obstacle");
+                        String color = REPORT_COLORS.getOrDefault(type, "#a855f7");
+                        double lat = rep.getDouble("lat");
+                        double lng = rep.getDouble("lng");
+                        if (features.length() > 0) features.append(",");
+                        features.append("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[")
+                            .append(lng).append(",").append(lat)
+                            .append("]},\"properties\":{\"id\":\"").append(id)
+                            .append("\",\"type\":\"").append(type)
+                            .append("\",\"color\":\"").append(color).append("\"}}");
+                    }
+                    String geojson = "{\"type\":\"FeatureCollection\",\"features\":[" + features + "]}";
+                    runOnUiThread(() -> {
+                        cachedReports = freshList;
+                        if (styleReady && mapStyle != null) {
+                            GeoJsonSource src = mapStyle.getSourceAs("lea-reports");
+                            if (src != null) src.setGeoJson(geojson);
+                        }
+                        checkReportsProximity();
+                    });
+                } catch (Exception ignored) {
+                } finally { r.close(); }
+            }
+        });
+    }
+
+    // ── Interaction sur un signalement (façon Waze) ─────────────────
+    // Toucher un point sur la carte : si ça touche un signalement, propose de confirmer
+    // ("toujours là") ou de le retirer ("plus là").
+    private void handleMapTap(LatLng tapLatLng) {
+        if (mapLibreMap == null || mapStyle == null || mapStyle.getLayer("lea-reports-layer") == null) return;
+        try {
+            android.graphics.PointF screenPoint = mapLibreMap.getProjection().toScreenLocation(tapLatLng);
+            List<org.maplibre.geojson.Feature> hits = mapLibreMap.queryRenderedFeatures(screenPoint, "lea-reports-layer");
+            if (hits.isEmpty()) return;
+            org.maplibre.geojson.Feature f = hits.get(0);
+            String id   = f.hasProperty("id")   ? f.getStringProperty("id")   : null;
+            String type = f.hasProperty("type") ? f.getStringProperty("type") : null;
+            if (id == null || id.isEmpty()) return;
+            showReportDialog(id, type);
+        } catch (Exception ignored) {}
+    }
+
+    private void showReportDialog(String id, String type) {
+        String emoji = REPORT_EMOJI.getOrDefault(type, "⚠️");
+        String label = REPORT_LABELS.getOrDefault(type, "Signalement");
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(emoji + "  " + label)
+            .setMessage("Ce signalement est-il toujours d'actualité ?")
+            .setPositiveButton("✅ Toujours là", (dialog, which) -> confirmReport(id))
+            .setNegativeButton("❌ Plus là", (dialog, which) -> dismissReport(id))
+            .setNeutralButton("Fermer", null)
+            .show();
+    }
+
+    private void confirmReport(String id) {
+        String url = serverHost + "/api/maps/report/" + id + "/confirm?username="
+            + java.net.URLEncoder.encode(currentUser, java.nio.charset.StandardCharsets.UTF_8);
+        http.newCall(new Request.Builder()
+            .url(url)
+            .post(RequestBody.create("{}", JSON))
+            .build())
+            .enqueue(new Callback() {
+                @Override public void onFailure(Call c, IOException e) {
+                    runOnUiThread(() -> Toast.makeText(LeaMapsActivity.this,
+                        "Échec de la confirmation (réseau).", Toast.LENGTH_SHORT).show());
+                }
+                @Override public void onResponse(Call c, Response r) {
+                    boolean ok = r.isSuccessful();
+                    r.close();
+                    runOnUiThread(() -> {
+                        if (ok) {
+                            Toast.makeText(LeaMapsActivity.this, "Merci, confirmé !", Toast.LENGTH_SHORT).show();
+                            fetchReports();
+                        } else {
+                            Toast.makeText(LeaMapsActivity.this, "Échec de la confirmation.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
+    }
+
+    private void dismissReport(String id) {
+        String url = serverHost + "/api/maps/report/" + id + "?username="
+            + java.net.URLEncoder.encode(currentUser, java.nio.charset.StandardCharsets.UTF_8);
+        http.newCall(new Request.Builder()
+            .url(url)
+            .delete()
+            .build())
+            .enqueue(new Callback() {
+                @Override public void onFailure(Call c, IOException e) {
+                    runOnUiThread(() -> Toast.makeText(LeaMapsActivity.this,
+                        "Échec du retrait (réseau).", Toast.LENGTH_SHORT).show());
+                }
+                @Override public void onResponse(Call c, Response r) {
+                    boolean ok = r.isSuccessful();
+                    r.close();
+                    runOnUiThread(() -> {
+                        if (ok) {
+                            alertedReportIds.remove(id);
+                            Toast.makeText(LeaMapsActivity.this, "Signalement retiré, merci !", Toast.LENGTH_SHORT).show();
+                            fetchReports();
+                        } else {
+                            Toast.makeText(LeaMapsActivity.this, "Échec du retrait.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
+    }
+
+    // ── Alerte de proximité (façon Waze) — prévient quand on approche d'un signalement ──
+    private void checkReportsProximity() {
+        if (!hasLocation) return;
+        for (JSONObject rep : cachedReports) {
+            try {
+                String id = rep.optString("id", "");
+                if (id.isEmpty() || alertedReportIds.contains(id)) continue;
+                double lat = rep.getDouble("lat");
+                double lng = rep.getDouble("lng");
+                double dist = haversine(currentLat, currentLon, lat, lng);
+                if (dist <= PROXIMITY_ALERT_METERS) {
+                    alertedReportIds.add(id);
+                    String type  = rep.optString("type", "obstacle");
+                    String emoji = REPORT_EMOJI.getOrDefault(type, "⚠️");
+                    String label = REPORT_LABELS.getOrDefault(type, "Signalement");
+                    Toast.makeText(this, emoji + " " + label + " signalé à proximité (" + Math.round(dist) + " m)",
+                        Toast.LENGTH_LONG).show();
+                }
+            } catch (Exception ignored) {}
         }
     }
 
@@ -742,6 +1288,17 @@ public class LeaMapsActivity extends AppCompatActivity {
     }
 
     private void fetchRoute(double sLat, double sLon, double eLat, double eLon, String destName) {
+        List<LatLng> pts = new ArrayList<>();
+        pts.add(new LatLng(sLat, sLon));
+        pts.add(new LatLng(eLat, eLon));
+        fetchMultiPointRoute(pts, destName);
+    }
+
+    // Itinéraire à travers plusieurs points (départ GPS + repères posés par appui long,
+    // façon Google Maps) — OSRM accepte nativement une chaîne de coordonnées, pas
+    // seulement deux points.
+    private void fetchMultiPointRoute(List<LatLng> points, String destName) {
+        if (points.size() < 2) return;
         String baseUrl;
         switch (routeMode) {
             case "walking": baseUrl = "https://routing.openstreetmap.de/routed-foot/route/v1/foot/"; break;
@@ -749,8 +1306,15 @@ public class LeaMapsActivity extends AppCompatActivity {
             default:        baseUrl = "https://router.project-osrm.org/route/v1/driving/"; break;
         }
 
-        String url = baseUrl + sLon + "," + sLat + ";" + eLon + "," + eLat
-            + "?overview=full&geometries=geojson&steps=true";
+        StringBuilder coordsPart = new StringBuilder();
+        for (int i = 0; i < points.size(); i++) {
+            if (i > 0) coordsPart.append(";");
+            coordsPart.append(points.get(i).getLongitude()).append(",").append(points.get(i).getLatitude());
+        }
+        String url = baseUrl + coordsPart + "?overview=full&geometries=geojson&steps=true";
+
+        LatLng dest = points.get(points.size() - 1);
+        double eLat = dest.getLatitude(), eLon = dest.getLongitude();
 
         http.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
             @Override public void onFailure(Call call, IOException e) {
@@ -771,18 +1335,24 @@ public class LeaMapsActivity extends AppCompatActivity {
                     double     durMin = route.getDouble("duration") / 60.0;
 
                     JSONArray coords = route.getJSONObject("geometry").getJSONArray("coordinates");
-                    List<GeoPoint> points = new ArrayList<>();
+                    List<double[]> routePoints = new ArrayList<>();
                     for (int i = 0; i < coords.length(); i++) {
                         JSONArray c = coords.getJSONArray(i);
-                        points.add(new GeoPoint(c.getDouble(1), c.getDouble(0)));
+                        routePoints.add(new double[]{ c.getDouble(1), c.getDouble(0) }); // [lat, lon]
                     }
 
-                    JSONArray steps = route.getJSONArray("legs")
-                        .getJSONObject(0).getJSONArray("steps");
+                    // Un "leg" par segment entre deux points consécutifs — on les concatène
+                    // pour avoir les instructions tour-par-tour sur tout le trajet complet.
+                    JSONArray legs = route.getJSONArray("legs");
+                    JSONArray allSteps = new JSONArray();
+                    for (int i = 0; i < legs.length(); i++) {
+                        JSONArray legSteps = legs.getJSONObject(i).getJSONArray("steps");
+                        for (int j = 0; j < legSteps.length(); j++) allSteps.put(legSteps.getJSONObject(j));
+                    }
 
                     runOnUiThread(() -> {
-                        drawRoute(points, distKm, durMin, eLat, eLon, destName);
-                        storeSteps(steps);
+                        drawRoute(routePoints, distKm, durMin, eLat, eLon, destName);
+                        storeSteps(allSteps);
                     });
                 } catch (Exception e) {
                     runOnUiThread(() -> Toast.makeText(LeaMapsActivity.this,
@@ -792,27 +1362,23 @@ public class LeaMapsActivity extends AppCompatActivity {
         });
     }
 
-    private void drawRoute(List<GeoPoint> points, double distKm, double durMin,
+    private void drawRoute(List<double[]> points, double distKm, double durMin,
                            double dLat, double dLon, String destName) {
-        if (routeLine != null) mapView.getOverlays().remove(routeLine);
+        currentRouteCoords = points;
+        drawRouteLayer(points);
 
-        // Tracé Waze cyan
-        routeLine = new Polyline(mapView);
-        routeLine.setPoints(points);
-        routeLine.getOutlinePaint().setColor(Color.parseColor("#33CCFF"));
-        routeLine.getOutlinePaint().setStrokeWidth(14f);
-        mapView.getOverlays().add(0, routeLine);
+        destLat = dLat; destLon = dLon; destLabel = destName; hasDest = true;
+        updateDestLayer();
 
-        // Marker destination
-        if (destMarker != null) mapView.getOverlays().remove(destMarker);
-        destMarker = new Marker(mapView);
-        destMarker.setPosition(new GeoPoint(dLat, dLon));
-        destMarker.setTitle(destName);
-        destMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        mapView.getOverlays().add(destMarker);
-
-        mapView.invalidate();
-        if (!points.isEmpty()) mapView.zoomToBoundingBox(routeLine.getBounds(), true, 80);
+        // Cadrage sur l'itinéraire
+        if (!points.isEmpty() && mapLibreMap != null) {
+            org.maplibre.android.geometry.LatLngBounds.Builder boundsBuilder =
+                new org.maplibre.android.geometry.LatLngBounds.Builder();
+            for (double[] p : points) boundsBuilder.include(new LatLng(p[0], p[1]));
+            try {
+                mapLibreMap.animateCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 80));
+            } catch (Exception ignored) {}
+        }
 
         // Sauvegarder pour la navigation
         navTotalDistKm = distKm;
@@ -824,7 +1390,15 @@ public class LeaMapsActivity extends AppCompatActivity {
         navSummaryMin.setText(durMin >= 60
             ? String.format("%dh%02d", (int)(durMin / 60), (int)(durMin % 60))
             : String.format("%.0f", durMin));
-        navSummaryDist.setText(String.format("%.1f", distKm));
+        if ("walking".equals(routeMode)) {
+            // Estimation basée sur une foulée moyenne de 0,75 m — indicatif, pas une mesure exacte
+            long steps = Math.round(distKm * 1000 / 0.75);
+            navSummaryDist.setText(String.valueOf(steps));
+            navSummaryDistUnit.setText("pas");
+        } else {
+            navSummaryDist.setText(String.format("%.1f", distKm));
+            navSummaryDistUnit.setText("km");
+        }
 
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.MINUTE, (int) durMin);
@@ -843,9 +1417,9 @@ public class LeaMapsActivity extends AppCompatActivity {
     }
 
     private void clearRoute() {
-        if (routeLine  != null) { mapView.getOverlays().remove(routeLine);  routeLine  = null; }
-        if (destMarker != null) { mapView.getOverlays().remove(destMarker); destMarker = null; }
-        mapView.invalidate();
+        clearRouteLayer();
+        clearDestLayer();
+        clearWaypoints();
         navSteps.clear();
         navStepIdx = 0;
         routeSummaryBlock.setVisibility(View.GONE);

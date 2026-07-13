@@ -5,6 +5,7 @@ import {
   CheckCheck, Check, Edit3, Trash2, UserPlus, ChevronUp,
   Play, Pause, Smile, Menu, ArrowLeft, UserCircle2, Copy
 } from 'lucide-react';
+import { useConfirmToast } from '../../hooks/useConfirmToast';
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPES
@@ -396,6 +397,9 @@ const CallModal: React.FC<{ call: CallSession; onEnd: () => void }> = ({ call, o
 export const LeaChat = () => {
   const currentUser = localStorage.getItem('lea_currentUser') || '';
 
+  // --- MODAL DE CONFIRMATION + TOAST (remplace les alert()/window.confirm() natifs moches) ---
+  const { askConfirm, showToast, ConfirmToastHost } = useConfirmToast();
+
   // ── Core state ─────────────────────────────────────────────────────────────
   const [chats,    setChats]    = useState<ChatGroup[]>([]);
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
@@ -599,7 +603,7 @@ export const LeaChat = () => {
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>, isImg: boolean) => {
     const f = e.target.files?.[0]; if (!f) return;
-    if (f.size > 10 * 1024 * 1024) { alert('Max 10 Mo'); return; }
+    if (f.size > 10 * 1024 * 1024) { showToast('Max 10 Mo'); return; }
     setUploadPct(20);
     const data = await b64(f);
     setUploadPct(100);
@@ -624,14 +628,15 @@ export const LeaChat = () => {
     send({ type: 'MSG_DELETE', chatId: selId, messageId: msgId });
   };
 
-  const handleDeleteConv = async (chatId: string, e: React.MouseEvent) => {
+  const handleDeleteConv = (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Supprimer cette conversation ?')) return;
-    const ok = await api.deleteConversation(chatId);
-    if (ok) {
-      setChats(p => p.filter(c => c.id !== chatId));
-      if (selId === chatId) setSelId('global-1');
-    }
+    askConfirm('Supprimer cette conversation ?', async () => {
+      const ok = await api.deleteConversation(chatId);
+      if (ok) {
+        setChats(p => p.filter(c => c.id !== chatId));
+        if (selId === chatId) setSelId('global-1');
+      }
+    });
   };
 
   const startCall = (callType: 'voice' | 'video') => {
@@ -1033,6 +1038,7 @@ export const LeaChat = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
+      <ConfirmToastHost />
       <input ref={fileRef} type="file" accept=".pdf,.txt,.docx,.mp4,.webm,.mp3,.wav,.m4a" className="hidden" onChange={e => handleFile(e, false)}/>
       <input ref={imgRef}  type="file" accept="image/*" className="hidden" onChange={e => handleFile(e, true)}/>
 

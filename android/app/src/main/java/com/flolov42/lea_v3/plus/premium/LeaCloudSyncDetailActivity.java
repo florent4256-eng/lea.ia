@@ -21,8 +21,11 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
 import android.os.Environment;
 import android.util.Base64;
@@ -52,8 +55,8 @@ import okhttp3.Response;
 public class LeaCloudSyncDetailActivity extends LeaFeatureDetailActivity {
 
     private static final int PICK_FILE = 101;
-    private static final int BG_DARK   = 0xFF000D1A;
-    private static final int CARD_CLR  = 0xFF001A2E;
+    private static final int BG_DARK   = 0xFF020617;
+    private static final int CARD_CLR  = 0xFF0D1B2C;
     private static final int CYAN_C    = 0xFF00E5FF;
     private static final int PURPLE    = 0xFF7C3AED;
     private static final int GREEN_C   = 0xFF10B981;
@@ -61,6 +64,7 @@ public class LeaCloudSyncDetailActivity extends LeaFeatureDetailActivity {
     private static final int RED_C     = 0xFFEF4444;
     private static final int DIM_C     = 0xFF64748B;
     private static final int WHITE     = 0xFFFFFFFF;
+    private static final int GLASS_BORDER = 0x1EFFFFFF;
 
     private LinearLayout fileListLayout;
     private TextView storageText;
@@ -81,7 +85,13 @@ public class LeaCloudSyncDetailActivity extends LeaFeatureDetailActivity {
         // ── Barre de stockage ──────────────────────────────────────────────
         LinearLayout storageBar = new LinearLayout(this);
         storageBar.setOrientation(LinearLayout.VERTICAL);
-        storageBar.setBackgroundColor(CARD_CLR);
+        GradientDrawable storageBarBg = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD_CLR, 0.06f), CARD_CLR });
+        storageBarBg.setCornerRadius(dp(18));
+        storageBarBg.setStroke(dp(1), GLASS_BORDER);
+        storageBar.setElevation(dp(2));
+        storageBar.setBackground(storageBarBg);
         storageBar.setPadding(dp(16), dp(12), dp(16), dp(14));
         LinearLayout.LayoutParams sbLp = new LinearLayout.LayoutParams(-1, -2);
         sbLp.setMargins(dp(12), dp(8), dp(12), 0);
@@ -113,7 +123,11 @@ public class LeaCloudSyncDetailActivity extends LeaFeatureDetailActivity {
 
         // Barre de progression stockage
         FrameLayout progressTrack = new FrameLayout(this);
-        progressTrack.setBackgroundColor(0xFF002033);
+        GradientDrawable progressTrackBg = new GradientDrawable();
+        progressTrackBg.setColor(0xFF002033);
+        progressTrackBg.setCornerRadius(dp(4));
+        progressTrack.setBackground(progressTrackBg);
+        progressTrack.setClipToOutline(true);
         LinearLayout.LayoutParams ptLp = new LinearLayout.LayoutParams(-1, dp(8));
         ptLp.setMargins(0, dp(10), 0, 0);
         progressTrack.setLayoutParams(ptLp);
@@ -295,7 +309,13 @@ public class LeaCloudSyncDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, dp(2), 0, dp(2));
         row.setLayoutParams(lp);
-        row.setBackgroundColor(CARD_CLR);
+        GradientDrawable folderRowBg = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD_CLR, 0.06f), CARD_CLR });
+        folderRowBg.setCornerRadius(dp(14));
+        folderRowBg.setStroke(dp(1), GLASS_BORDER);
+        row.setElevation(dp(1));
+        row.setBackground(folderRowBg);
 
         TextView icon = makeText("📁", 20, WHITE, Typeface.NORMAL);
         icon.setMinWidth(dp(36));
@@ -332,7 +352,13 @@ public class LeaCloudSyncDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, dp(2), 0, dp(2));
         row.setLayoutParams(lp);
-        row.setBackgroundColor(CARD_CLR);
+        GradientDrawable fileRowBg = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD_CLR, 0.06f), CARD_CLR });
+        fileRowBg.setCornerRadius(dp(14));
+        fileRowBg.setStroke(dp(1), GLASS_BORDER);
+        row.setElevation(dp(1));
+        row.setBackground(fileRowBg);
 
         // Icône par type
         String emoji = fileEmoji(ext);
@@ -504,7 +530,11 @@ public class LeaCloudSyncDetailActivity extends LeaFeatureDetailActivity {
         et.setTextColor(WHITE);
         et.setHintTextColor(DIM_C);
         et.setPadding(dp(16), dp(12), dp(16), dp(12));
-        et.setBackgroundColor(CARD_CLR);
+        GradientDrawable etBg = new GradientDrawable();
+        etBg.setColor(CARD_CLR);
+        etBg.setCornerRadius(dp(12));
+        etBg.setStroke(dp(1), GLASS_BORDER);
+        et.setBackground(etBg);
         new AlertDialog.Builder(this)
             .setTitle("Nouveau dossier")
             .setView(et)
@@ -604,7 +634,12 @@ public class LeaCloudSyncDetailActivity extends LeaFeatureDetailActivity {
         Button btn = new Button(this);
         btn.setText(text);
         btn.setTextColor(textColor);
-        btn.setBackgroundColor(bgColor);
+        GradientDrawable gd = new GradientDrawable();
+        gd.setColor(bgColor);
+        gd.setCornerRadius(dp(14));
+        gd.setStroke(dp(1), textColor);
+        btn.setBackground(new RippleDrawable(ColorStateList.valueOf((textColor & 0x00FFFFFF) | 0x55000000), gd, null));
+        btn.setElevation(dp(1));
         btn.setTextSize(11);
         btn.setTypeface(null, Typeface.BOLD);
         btn.setAllCaps(false);

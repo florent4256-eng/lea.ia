@@ -148,15 +148,15 @@ public class UpdateCheckService extends IntentService {
                         }
                     }
 
-                    Intent launchIntent = new Intent(this, UpdateActivity.class);
+                    Intent launchIntent = new Intent(this, UpdatePromptActivity.class);
                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    launchIntent.putExtra(UpdateActivity.EXTRA_VERSION,     latestVersion);
-                    launchIntent.putExtra(UpdateActivity.EXTRA_NAME,        name);
-                    launchIntent.putExtra(UpdateActivity.EXTRA_DESCRIPTION, description);
-                    launchIntent.putExtra(UpdateActivity.EXTRA_MANDATORY,   mandatory);
-                    launchIntent.putExtra(UpdateActivity.EXTRA_DOWNLOAD_URL, downloadUrl);
-                    launchIntent.putExtra(UpdateActivity.EXTRA_FILE_SIZE,   fileSize);
-                    launchIntent.putExtra(UpdateActivity.EXTRA_CHANGELOG,   changelog.toString());
+                    launchIntent.putExtra(UpdatePromptActivity.EXTRA_VERSION,     latestVersion);
+                    launchIntent.putExtra(UpdatePromptActivity.EXTRA_NAME,        name);
+                    launchIntent.putExtra(UpdatePromptActivity.EXTRA_DESCRIPTION, description);
+                    launchIntent.putExtra(UpdatePromptActivity.EXTRA_MANDATORY,   mandatory);
+                    launchIntent.putExtra(UpdatePromptActivity.EXTRA_DOWNLOAD_URL, downloadUrl);
+                    launchIntent.putExtra(UpdatePromptActivity.EXTRA_FILE_SIZE,   fileSize);
+                    launchIntent.putExtra(UpdatePromptActivity.EXTRA_CHANGELOG,   changelog.toString());
                     startActivity(launchIntent);
                     break;
                 }

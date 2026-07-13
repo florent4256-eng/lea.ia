@@ -72,7 +72,7 @@ export const LeaTerms: React.FC<LeaTermsProps> = ({ onClose }) => {
               <Lock size={16} className="text-red-400" /> 4. Responsabilité de l'Opérateur
             </h3>
             <p className="text-sm leading-relaxed">
-              Le réseau est strictement privé. L'opérateur s'engage à ne pas utiliser l'infrastructure de LÉA pour des activités compromettant l'intégrité du système de flolov42. La perte de vos clés d'accès entraînera la perte irréversible de vos données locales.
+              Le réseau est strictement privé. L'opérateur s'engage à ne pas utiliser l'infrastructure de LÉA pour des activités compromettant l'intégrité du système de l'Administrateur. La perte de vos clés d'accès entraînera la perte irréversible de vos données locales.
             </p>
           </section>
 

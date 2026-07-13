@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Shield, CreditCard, Globe, Save, Key, Mail, Check, Volume2, Heart, Bot, X, Phone, Mic, MessageSquare, Sparkles, RefreshCw, Brain, Trash2, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useConfirmToast } from '../hooks/useConfirmToast';
 
 export const LeaSettings = ({ onClose }: { onClose?: () => void }) => {
   const { t, i18n } = useTranslation();
@@ -36,6 +37,9 @@ export const LeaSettings = ({ onClose }: { onClose?: () => void }) => {
   const [newPassword, setNewPassword] = useState('');
   const [pwdStatus, setPwdStatus] = useState<{type: 'success' | 'error', msg: string} | null>(null);
 const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+
+  // --- MODAL DE CONFIRMATION + TOAST (remplace les alert()/window.confirm() natifs moches) ---
+  const { askConfirm, showToast, ConfirmToastHost } = useConfirmToast();
 
 // --- ÉTATS POUR L'AUTO-DESTRUCTION ---
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -126,7 +130,7 @@ const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly'
   const changeVoice = async (voiceId: string) => {
     setActiveVoice(voiceId); // Met à jour l'interface en bleu immédiatement
     try {
-      // Sauvegarde dans le bunker de flolov42
+      // Sauvegarde dans le coffre de l'utilisateur
       await fetch('/api/user/update-voice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -251,12 +255,12 @@ const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly'
       const data = await response.json();
       
       if (data.success) {
-        alert("💥 " + data.message);
+        showToast("💥 " + data.message);
         // On pulvérise la mémoire locale du navigateur
         localStorage.removeItem('lea_currentUser');
         localStorage.removeItem('lea_user_' + currentUser.toLowerCase());
-        // On redirige vers la page de connexion
-        window.location.href = '/'; 
+        // On redirige vers la page de connexion (léger délai pour laisser voir le toast)
+        setTimeout(() => { window.location.href = '/'; }, 1200);
       } else {
         setDeleteError(data.error || "Échec de l'auto-destruction.");
       }
@@ -268,36 +272,37 @@ const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly'
   // --- LES FONCTIONS DE GESTION DE L'ABONNEMENT ---
   const handleUpgrade = async (plan: string) => {
     const price = billingCycle === 'monthly' ? "19.99€" : "199.99€";
-    if (!window.confirm(`Confirmer l'achat de ${plan} (${billingCycle}) pour ${price} ?`)) return;
-    
-    try {
-      await fetch(`/api/subscription/upgrade`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          username: currentUser, 
-          planType: plan,
-          billingCycle: billingCycle 
-        })
-      });
-      window.location.reload();
-    } catch (e) { 
-      console.error("Erreur lors de l'upgrade :", e); 
-    }
+    askConfirm(`Confirmer l'achat de ${plan} (${billingCycle}) pour ${price} ?`, async () => {
+      try {
+        await fetch(`/api/subscription/upgrade`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: currentUser,
+            planType: plan,
+            billingCycle: billingCycle
+          })
+        });
+        window.location.reload();
+      } catch (e) {
+        console.error("Erreur lors de l'upgrade :", e);
+      }
+    });
   };
 
   const handleCancelSubscription = async () => {
-    if (!window.confirm("Voulez-vous vraiment résilier ? Vous garderez vos accès jusqu'à la fin de la période actuelle.")) return;
-    try {
-      await fetch(`/api/subscription/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: currentUser })
-      });
-      window.location.reload();
-    } catch (e) { 
-      console.error("Erreur lors de la résiliation :", e); 
-    }
+    askConfirm("Voulez-vous vraiment résilier ? Vous garderez vos accès jusqu'à la fin de la période actuelle.", async () => {
+      try {
+        await fetch(`/api/subscription/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: currentUser })
+        });
+        window.location.reload();
+      } catch (e) {
+        console.error("Erreur lors de la résiliation :", e);
+      }
+    });
   };
 
   // --- LA FONCTION DE VÉRIFICATION WEB3 ---
@@ -334,7 +339,7 @@ const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly'
     }
   };
 
-  // --- LE GRAND REGISTRE DYNAMIQUE DES VOIX DE FLOLOV42 ---
+  // --- LE GRAND REGISTRE DYNAMIQUE DES VOIX ---
   const currentLangKey = (localStorage.getItem('i18nextLng') || 'fr').substring(0, 2);
 
   const voicesRegistry: Record<string, {id: string, name: string, desc: string, gender: string}[]> = {
@@ -401,7 +406,7 @@ const handleProfileUpdate = async () => {
           ...profileData
         })
       });
-      alert("Identité sauvegardée dans le bunker !");
+      showToast("Identité sauvegardée dans le bunker !");
     } catch (err) {
       console.error("Erreur sauvegarde profil:", err);
     }
@@ -472,10 +477,10 @@ const handleProfileUpdate = async () => {
   };
 
   const handleClearAllInstructions = () => {
-    if(window.confirm("Alerte: Es-tu sûr de vouloir effacer toute la mémoire contextuelle de Léa ?")) {
+    askConfirm("Es-tu sûr de vouloir effacer toute la mémoire contextuelle de Léa ?", () => {
       setInstructionsBlocks([]);
       saveInstructionsToBunker(isCustomEnabled, []);
-    }
+    });
   };
 
   const handleAddBixbyMemory = () => {
@@ -539,6 +544,8 @@ const handleProfileUpdate = async () => {
           </div>
         </div>
       )}
+
+      <ConfirmToastHost />
 
       {/* MENU : ADAPTATIF MOBILE (HAUT) / DESKTOP (GAUCHE) */}
 <div className="w-full md:w-64 flex md:flex-col gap-2 pb-4 md:pr-8 border-b md:border-b-0 md:border-r border-white/10 shrink-0 overflow-x-auto md:overflow-x-visible no-scrollbar">
@@ -1116,12 +1123,10 @@ const handleProfileUpdate = async () => {
                   </div>
                   {instructionsBlocks.length > 0 && (
                     <button
-                      onClick={() => {
-                        if (window.confirm('Effacer toute la mémoire long terme ?')) {
-                          setInstructionsBlocks([]);
-                          saveInstructionsToBunker(isCustomEnabled, []);
-                        }
-                      }}
+                      onClick={() => askConfirm('Effacer toute la mémoire long terme ?', () => {
+                        setInstructionsBlocks([]);
+                        saveInstructionsToBunker(isCustomEnabled, []);
+                      })}
                       className="text-xs text-red-400/60 hover:text-red-400 transition-colors flex items-center gap-1"
                     >
                       <Trash2 size={12} /> Tout effacer

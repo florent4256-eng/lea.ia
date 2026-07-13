@@ -500,17 +500,17 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- 🔄 SYSTÈME DE MISE À JOUR — Dialog obligatoire (updatepackage) -->
+        <!-- 🔄 MISE À JOUR — Popup auto-déclenché par UpdateCheckService (nouvelle version détectée) -->
         <activity
-            android:name=".update.UpdateActivity"
+            android:name=".update.UpdatePromptActivity"
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
             android:screenOrientation="portrait"
             android:launchMode="singleTop" />
 
-        <!-- 🔄 SYSTÈME DE MISE À JOUR — Interface One UI (depuis Settings) -->
+        <!-- 🔄 MISE À JOUR — Écran complet "Vérifier les mises à jour" (ouvert depuis la sidebar) -->
         <activity
-            android:name=".ui.UpdateActivity"
+            android:name=".ui.UpdateCheckActivity"
             android:exported="false"
             android:theme="@style/AppTheme.UpdateDark"
             android:screenOrientation="portrait" />

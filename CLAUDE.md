@@ -57,7 +57,7 @@
 - Export nommé (pas default)
 - State local uniquement sauf si partagé entre modules
 - Les appels serveur utilisent `(window as any).LEA_SERVER_URL || ''`
-- L'utilisateur courant : `localStorage.getItem('lea_currentUser') || 'flolov42'`
+- L'utilisateur courant : `localStorage.getItem('lea_currentUser')`
 
 ## Serveur (server.cjs)
 - Node.js + Express + WebSocket

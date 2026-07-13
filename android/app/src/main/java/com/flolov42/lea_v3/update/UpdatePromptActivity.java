@@ -15,7 +15,10 @@ import android.widget.ScrollView;
 
 import java.io.File;
 
-public class UpdateActivity extends Activity {
+// Renommée depuis UpdateActivity (2026-07-12) pour la distinguer de ui.UpdateCheckActivity —
+// celle-ci est le popup léger déclenché automatiquement par UpdateCheckService quand une
+// nouvelle version est détectée en arrière-plan, pas l'écran complet ouvert depuis la sidebar.
+public class UpdatePromptActivity extends Activity {
 
     public static final String EXTRA_VERSION = "version";
     public static final String EXTRA_NAME = "name";

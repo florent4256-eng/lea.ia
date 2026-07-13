@@ -17,7 +17,10 @@ import com.flolov42.lea_v3.database.*;
 import com.flolov42.lea_v3.notifications.*;
 import com.flolov42.lea_v3.utilities.*;
 
+import android.content.res.ColorStateList;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
@@ -25,9 +28,9 @@ import java.util.List;
 
 public class LeaMarketplaceDetailActivity extends LeaFeatureDetailActivity {
 
-    private static final int BG    = 0xFF000D1A;
-    private static final int CARD  = 0xFF001A2E;
-    private static final int CARD2 = 0xFF00243F;
+    private static final int BG    = 0xFF020617;
+    private static final int CARD  = 0xFF0B1526;
+    private static final int CARD2 = 0xFF0F1B2E;
     private static final int CYAN  = 0xFF00E5FF;
     private static final int GREEN = 0xFF10B981;
     private static final int PURPLE= 0xFF7C3AED;
@@ -38,6 +41,7 @@ public class LeaMarketplaceDetailActivity extends LeaFeatureDetailActivity {
     private static final int WHITE = 0xFFFFFFFF;
     private static final int DIM   = 0xFF64748B;
     private static final int DIM2  = 0xFF94A3B8;
+    private static final int GLASS_BORDER = 0x1EFFFFFF;
 
     @Override protected String getFeatureId() { return LeaPlusDatabase.MARKETPLACE; }
 
@@ -52,8 +56,14 @@ public class LeaMarketplaceDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
         hero.setGravity(Gravity.CENTER);
-        hero.setBackgroundColor(CARD);
         hero.setPadding(dp(20), dp(22), dp(20), dp(20));
+        GradientDrawable heroGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        heroGd.setCornerRadius(dp(20));
+        heroGd.setStroke(dp(1), GLASS_BORDER);
+        hero.setElevation(dp(2));
+        hero.setBackground(heroGd);
         LinearLayout.LayoutParams hLp = new LinearLayout.LayoutParams(-1, -2);
         hLp.setMargins(dp(12), dp(8), dp(12), 0); hero.setLayoutParams(hLp);
 
@@ -101,8 +111,14 @@ public class LeaMarketplaceDetailActivity extends LeaFeatureDetailActivity {
             secHeader(parent, header[0] + " " + header[1]);
             LinearLayout catCard = new LinearLayout(this);
             catCard.setOrientation(LinearLayout.VERTICAL);
-            catCard.setBackgroundColor(CARD);
             catCard.setPadding(dp(14), dp(8), dp(14), dp(8));
+            GradientDrawable catGd = new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                new int[]{ lighten(CARD, 0.06f), CARD });
+            catGd.setCornerRadius(dp(18));
+            catGd.setStroke(dp(1), GLASS_BORDER);
+            catCard.setElevation(dp(2));
+            catCard.setBackground(catGd);
             LinearLayout.LayoutParams ccLp = new LinearLayout.LayoutParams(-1, -2);
             ccLp.setMargins(dp(12), dp(4), dp(12), 0); catCard.setLayoutParams(ccLp);
 
@@ -135,8 +151,14 @@ public class LeaMarketplaceDetailActivity extends LeaFeatureDetailActivity {
                 } else {
                     Button buyBtn = new Button(this);
                     buyBtn.setText(price);
-                    buyBtn.setTextColor(balance >= priceVal ? GOLD : DIM);
-                    buyBtn.setBackgroundColor(balance >= priceVal ? 0xFF1A1000 : CARD2);
+                    int buyColor = balance >= priceVal ? GOLD : DIM;
+                    buyBtn.setTextColor(buyColor);
+                    GradientDrawable buyGd = new GradientDrawable();
+                    buyGd.setColor((buyColor & 0x00FFFFFF) | 0x22000000);
+                    buyGd.setCornerRadius(dp(10));
+                    buyGd.setStroke(dp(1), buyColor);
+                    buyBtn.setBackground(new RippleDrawable(
+                        ColorStateList.valueOf((buyColor & 0x00FFFFFF) | 0x55000000), buyGd, null));
                     buyBtn.setTextSize(10); buyBtn.setTypeface(null, Typeface.BOLD); buyBtn.setAllCaps(false);
                     buyBtn.setPadding(dp(10), dp(4), dp(10), dp(4));
                     buyBtn.setLayoutParams(new LinearLayout.LayoutParams(-2, dp(30)));

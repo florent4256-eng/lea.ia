@@ -18,6 +18,7 @@ import com.flolov42.lea_v3.notifications.*;
 import com.flolov42.lea_v3.utilities.*;
 
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
@@ -25,9 +26,9 @@ import java.util.List;
 
 public class LeaQuestDetailActivity extends LeaFeatureDetailActivity {
 
-    private static final int BG    = 0xFF000D1A;
-    private static final int CARD  = 0xFF001A2E;
-    private static final int CARD2 = 0xFF00243F;
+    private static final int BG    = 0xFF020617;
+    private static final int CARD  = 0xFF0D1526;
+    private static final int CARD2 = 0xFF16233C;
     private static final int CYAN  = 0xFF00E5FF;
     private static final int GREEN = 0xFF10B981;
     private static final int ORANGE= 0xFFF59E0B;
@@ -36,6 +37,7 @@ public class LeaQuestDetailActivity extends LeaFeatureDetailActivity {
     private static final int WHITE = 0xFFFFFFFF;
     private static final int DIM   = 0xFF64748B;
     private static final int DIM2  = 0xFF94A3B8;
+    private static final int GLASS_BORDER = 0x1EFFFFFF;
 
     @Override protected String getFeatureId() { return LeaPlusDatabase.QUESTS; }
 
@@ -67,7 +69,8 @@ public class LeaQuestDetailActivity extends LeaFeatureDetailActivity {
             LinearLayout empty = new LinearLayout(this);
             empty.setOrientation(LinearLayout.VERTICAL);
             empty.setGravity(Gravity.CENTER);
-            empty.setBackgroundColor(CARD);
+            empty.setBackground(glassCard(dp(18), GLASS_BORDER));
+            empty.setElevation(dp(2));
             empty.setPadding(dp(24), dp(32), dp(24), dp(32));
             LinearLayout.LayoutParams eLp = new LinearLayout.LayoutParams(-1, -2);
             eLp.setMargins(dp(12), dp(4), dp(12), 0); empty.setLayoutParams(eLp);
@@ -88,7 +91,8 @@ public class LeaQuestDetailActivity extends LeaFeatureDetailActivity {
             secHeader(parent, "✅ RÉCEMMENT TERMINÉES");
             LinearLayout doneCard = new LinearLayout(this);
             doneCard.setOrientation(LinearLayout.VERTICAL);
-            doneCard.setBackgroundColor(CARD);
+            doneCard.setBackground(glassCard(dp(18), GLASS_BORDER));
+            doneCard.setElevation(dp(2));
             doneCard.setPadding(dp(14), dp(12), dp(14), dp(12));
             LinearLayout.LayoutParams dcLp = new LinearLayout.LayoutParams(-1, -2);
             dcLp.setMargins(dp(12), dp(4), dp(12), dp(8)); doneCard.setLayoutParams(dcLp);
@@ -114,7 +118,8 @@ public class LeaQuestDetailActivity extends LeaFeatureDetailActivity {
     private View questCard(LeaPlusDatabase.QuestRow q) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackgroundColor(CARD);
+        card.setBackground(glassCard(dp(18), GLASS_BORDER));
+        card.setElevation(dp(2));
         card.setPadding(dp(14), dp(0), dp(14), dp(12));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(dp(12), dp(4), dp(12), 0); card.setLayoutParams(lp);
@@ -140,7 +145,7 @@ public class LeaQuestDetailActivity extends LeaFeatureDetailActivity {
         // Badge difficulté
         String diff = "easy".equals(q.difficulty) ? "FACILE" : "medium".equals(q.difficulty) ? "MOYEN" : "DIFFICILE";
         TextView diffBadge = tv(" " + diff + " ", 8, accentColor, Typeface.BOLD);
-        diffBadge.setBackgroundColor(0x22000000 | (accentColor & 0x00FFFFFF));
+        diffBadge.setBackground(pillBg(accentColor, false));
         diffBadge.setPadding(dp(4), dp(2), dp(4), dp(2));
         LinearLayout.LayoutParams dbLp = new LinearLayout.LayoutParams(-2, -2);
         dbLp.setMargins(dp(6), 0, 0, 0); diffBadge.setLayoutParams(dbLp);
@@ -194,7 +199,8 @@ public class LeaQuestDetailActivity extends LeaFeatureDetailActivity {
     }
     private LinearLayout miniStat(String icon, String val, String lbl, int color) {
         LinearLayout s = new LinearLayout(this); s.setOrientation(LinearLayout.VERTICAL);
-        s.setGravity(Gravity.CENTER); s.setBackgroundColor(CARD);
+        s.setGravity(Gravity.CENTER); s.setBackground(glassCard(dp(14), GLASS_BORDER));
+        s.setElevation(dp(2));
         s.setPadding(dp(8), dp(10), dp(8), dp(10));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1f);
         lp.setMargins(dp(3), 0, dp(3), 0); s.setLayoutParams(lp);
@@ -206,5 +212,14 @@ public class LeaQuestDetailActivity extends LeaFeatureDetailActivity {
     private void secHeader(LinearLayout p, String text) {
         TextView t = tv(text, 11, GOLD, Typeface.BOLD);
         t.setPadding(dp(16), dp(14), dp(16), dp(6)); p.addView(t);
+    }
+    /** Fond glassmorphism arrondi pour cartes locales (dégradé subtil + bordure translucide). */
+    private GradientDrawable glassCard(int radius, int borderColor) {
+        GradientDrawable gd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        gd.setCornerRadius(radius);
+        gd.setStroke(dp(1), borderColor);
+        return gd;
     }
 }

@@ -18,6 +18,7 @@ import com.flolov42.lea_v3.notifications.*;
 import com.flolov42.lea_v3.utilities.*;
 
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
@@ -25,9 +26,9 @@ import java.util.List;
 
 public class LeaCompanionDetailActivity extends LeaFeatureDetailActivity {
 
-    private static final int BG     = 0xFF000D1A;
-    private static final int CARD   = 0xFF001A2E;
-    private static final int CARD2  = 0xFF00243F;
+    private static final int BG     = 0xFF020617;
+    private static final int CARD   = 0xFF0B1526;
+    private static final int CARD2  = 0xFF0F1B2E;
     private static final int CYAN   = 0xFF00E5FF;
     private static final int PURPLE = 0xFF7C3AED;
     private static final int GREEN  = 0xFF10B981;
@@ -36,6 +37,7 @@ public class LeaCompanionDetailActivity extends LeaFeatureDetailActivity {
     private static final int WHITE  = 0xFFFFFFFF;
     private static final int DIM    = 0xFF64748B;
     private static final int DIM2   = 0xFF94A3B8;
+    private static final int GLASS_BORDER = 0x1EFFFFFF;
 
     @Override protected String getFeatureId() { return LeaPlusDatabase.COMPANION; }
 
@@ -59,7 +61,13 @@ public class LeaCompanionDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
         hero.setGravity(Gravity.CENTER);
-        hero.setBackgroundColor(CARD);
+        GradientDrawable heroGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        heroGd.setCornerRadius(dp(20));
+        heroGd.setStroke(dp(1), GLASS_BORDER);
+        hero.setElevation(dp(2));
+        hero.setBackground(heroGd);
         hero.setPadding(dp(20), dp(24), dp(20), dp(20));
         LinearLayout.LayoutParams hLp = new LinearLayout.LayoutParams(-1, -2);
         hLp.setMargins(dp(12), dp(8), dp(12), 0); hero.setLayoutParams(hLp);
@@ -75,7 +83,11 @@ public class LeaCompanionDetailActivity extends LeaFeatureDetailActivity {
 
         // Barre de lien
         FrameLayout barBg = new FrameLayout(this);
-        barBg.setBackgroundColor(0xFF002030);
+        GradientDrawable barBgGd = new GradientDrawable();
+        barBgGd.setColor(0xFF002030);
+        barBgGd.setCornerRadius(dp(4));
+        barBg.setBackground(barBgGd);
+        barBg.setClipToOutline(true);
         LinearLayout.LayoutParams bbLp = new LinearLayout.LayoutParams(-1, dp(6));
         bbLp.setMargins(dp(20), dp(12), dp(20), 0); barBg.setLayoutParams(bbLp);
         View fill = new View(this); fill.setBackgroundColor(bondColor);
@@ -106,7 +118,13 @@ public class LeaCompanionDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout msgCard = new LinearLayout(this);
         msgCard.setOrientation(LinearLayout.HORIZONTAL);
         msgCard.setGravity(Gravity.CENTER_VERTICAL);
-        msgCard.setBackgroundColor(CARD);
+        GradientDrawable msgGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        msgGd.setCornerRadius(dp(18));
+        msgGd.setStroke(dp(1), GLASS_BORDER);
+        msgCard.setElevation(dp(2));
+        msgCard.setBackground(msgGd);
         msgCard.setPadding(dp(14), dp(14), dp(14), dp(14));
         LinearLayout.LayoutParams mLp = new LinearLayout.LayoutParams(-1, -2);
         mLp.setMargins(dp(12), dp(4), dp(12), dp(24)); msgCard.setLayoutParams(mLp);
@@ -132,7 +150,13 @@ public class LeaCompanionDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.HORIZONTAL);
         card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setBackgroundColor(CARD);
+        GradientDrawable cardGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        cardGd.setCornerRadius(dp(16));
+        cardGd.setStroke(dp(1), GLASS_BORDER);
+        card.setElevation(dp(2));
+        card.setBackground(cardGd);
         card.setPadding(dp(14), dp(12), dp(14), dp(12));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(dp(12), dp(3), dp(12), 0); card.setLayoutParams(lp);
@@ -157,7 +181,13 @@ public class LeaCompanionDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout ll = new LinearLayout(this);
         ll.setOrientation(LinearLayout.VERTICAL);
         ll.setGravity(Gravity.CENTER);
-        ll.setBackgroundColor(CARD);
+        GradientDrawable llGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        llGd.setCornerRadius(dp(18));
+        llGd.setStroke(dp(1), GLASS_BORDER);
+        ll.setElevation(dp(2));
+        ll.setBackground(llGd);
         ll.setPadding(dp(24), dp(36), dp(24), dp(36));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(dp(12), dp(4), dp(12), 0); ll.setLayoutParams(lp);

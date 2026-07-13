@@ -19,6 +19,7 @@ import com.flolov42.lea_v3.utilities.*;
 
 import android.app.AlertDialog;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
@@ -27,9 +28,9 @@ import java.util.List;
 
 public class LeaLifeOSDetailActivity extends LeaFeatureDetailActivity {
 
-    private static final int BG    = 0xFF000D1A;
-    private static final int CARD  = 0xFF001A2E;
-    private static final int CARD2 = 0xFF00243F;
+    private static final int BG    = 0xFF020617;
+    private static final int CARD  = 0xFF0B1526;
+    private static final int CARD2 = 0xFF0F1B2E;
     private static final int CYAN  = 0xFF00E5FF;
     private static final int GREEN = 0xFF10B981;
     private static final int ORANGE= 0xFFF59E0B;
@@ -37,6 +38,7 @@ public class LeaLifeOSDetailActivity extends LeaFeatureDetailActivity {
     private static final int WHITE = 0xFFFFFFFF;
     private static final int DIM   = 0xFF64748B;
     private static final int DIM2  = 0xFF94A3B8;
+    private static final int GLASS_BORDER = 0x1EFFFFFF;
 
     @Override protected String getFeatureId() { return LeaPlusDatabase.LIFE_OS; }
 
@@ -51,7 +53,13 @@ public class LeaLifeOSDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
         hero.setGravity(Gravity.CENTER);
-        hero.setBackgroundColor(CARD);
+        GradientDrawable heroGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        heroGd.setCornerRadius(dp(20));
+        heroGd.setStroke(dp(1), GLASS_BORDER);
+        hero.setElevation(dp(2));
+        hero.setBackground(heroGd);
         hero.setPadding(dp(20), dp(20), dp(20), dp(20));
         LinearLayout.LayoutParams hLp = new LinearLayout.LayoutParams(-1, -2);
         hLp.setMargins(dp(12), dp(8), dp(12), 0); hero.setLayoutParams(hLp);
@@ -72,7 +80,8 @@ public class LeaLifeOSDetailActivity extends LeaFeatureDetailActivity {
         TextView secTv = tv("🗓️ PLANNING DU JOUR", 11, GOLD, Typeface.BOLD);
         secTv.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f)); secRow.addView(secTv);
         Button addBtn = new Button(this);
-        addBtn.setText("+ Ajouter"); addBtn.setTextColor(CYAN); addBtn.setBackgroundColor(0x2200E5FF);
+        addBtn.setText("+ Ajouter"); addBtn.setTextColor(CYAN);
+        addBtn.setBackground(pillBg(CYAN, false));
         addBtn.setTextSize(11); addBtn.setTypeface(null, Typeface.BOLD); addBtn.setAllCaps(false);
         addBtn.setPadding(dp(14), dp(6), dp(14), dp(6));
         addBtn.setLayoutParams(new LinearLayout.LayoutParams(-2, dp(32)));
@@ -85,7 +94,13 @@ public class LeaLifeOSDetailActivity extends LeaFeatureDetailActivity {
             LinearLayout empty = new LinearLayout(this);
             empty.setOrientation(LinearLayout.VERTICAL);
             empty.setGravity(Gravity.CENTER);
-            empty.setBackgroundColor(CARD);
+            GradientDrawable emptyGd = new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                new int[]{ lighten(CARD, 0.06f), CARD });
+            emptyGd.setCornerRadius(dp(18));
+            emptyGd.setStroke(dp(1), GLASS_BORDER);
+            empty.setElevation(dp(2));
+            empty.setBackground(emptyGd);
             empty.setPadding(dp(24), dp(36), dp(24), dp(36));
             LinearLayout.LayoutParams eLp = new LinearLayout.LayoutParams(-1, -2);
             eLp.setMargins(dp(12), dp(4), dp(12), 0); empty.setLayoutParams(eLp);
@@ -111,7 +126,13 @@ public class LeaLifeOSDetailActivity extends LeaFeatureDetailActivity {
         };
         LinearLayout routCard = new LinearLayout(this);
         routCard.setOrientation(LinearLayout.VERTICAL);
-        routCard.setBackgroundColor(CARD);
+        GradientDrawable routGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        routGd.setCornerRadius(dp(18));
+        routGd.setStroke(dp(1), GLASS_BORDER);
+        routCard.setElevation(dp(2));
+        routCard.setBackground(routGd);
         routCard.setPadding(dp(14), dp(8), dp(14), dp(8));
         LinearLayout.LayoutParams rcLp = new LinearLayout.LayoutParams(-1, -2);
         rcLp.setMargins(dp(12), dp(4), dp(12), dp(24)); routCard.setLayoutParams(rcLp);
@@ -141,7 +162,14 @@ public class LeaLifeOSDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.HORIZONTAL);
         card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setBackgroundColor(isCurrent ? 0xFF0D1F10 : CARD);
+        int cardBase = isCurrent ? 0xFF0D1F10 : CARD;
+        GradientDrawable cardGd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(cardBase, 0.06f), cardBase });
+        cardGd.setCornerRadius(dp(16));
+        cardGd.setStroke(dp(1), isCurrent ? GREEN : GLASS_BORDER);
+        card.setElevation(dp(2));
+        card.setBackground(cardGd);
         card.setPadding(dp(14), dp(12), dp(14), dp(12));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(dp(12), dp(3), dp(12), 0); card.setLayoutParams(lp);
@@ -168,8 +196,8 @@ public class LeaLifeOSDetailActivity extends LeaFeatureDetailActivity {
 
         if (isCurrent) {
             TextView nowTv = tv("▶ MAINTENANT", 9, GREEN, Typeface.BOLD);
-            nowTv.setBackgroundColor(0x2210B981);
-            nowTv.setPadding(dp(4), dp(3), dp(4), dp(3)); card.addView(nowTv);
+            nowTv.setBackground(pillBg(GREEN, false));
+            nowTv.setPadding(dp(8), dp(4), dp(8), dp(4)); card.addView(nowTv);
         }
         return card;
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import { useConfirmToast } from '../../hooks/useConfirmToast';
+import {
     Wallet, Pickaxe, TrendingUp, BarChart2, MessageCircle, 
     Send, Cpu, Play, Square, Settings, Activity, Terminal,
     Search, BarChart3 
@@ -7,6 +8,7 @@ import {
 import { createChart, ColorType } from 'lightweight-charts';
 
 export const LeaCrypto = () => {
+    const { askConfirm, showToast, ConfirmToastHost } = useConfirmToast();
     const [activeTab, setActiveTab] = useState('bot');
     const [isLeaChatOpen, setIsLeaChatOpen] = useState(false);
 
@@ -267,10 +269,10 @@ export const LeaCrypto = () => {
             });
             const result = await response.json();
             if (result.success) {
-                alert(`🎯 TIR RÉUSSI : ${result.message}`);
+                showToast(`🎯 TIR RÉUSSI : ${result.message}`);
                 fetchWalletData(); // Actualise tes sous immédiatement
             } else {
-                alert(`⚠️ ÉCHEC DU TIR : ${result.error}`);
+                showToast(`⚠️ ÉCHEC DU TIR : ${result.error}`);
             }
         } catch (error) {
             console.error("Erreur de communication avec le serveur");
@@ -286,7 +288,7 @@ export const LeaCrypto = () => {
 
         // 🛡️ SÉCURITÉ : VERROU DU BUDGET MINIMUM
         if (action === 'start' && currentBudget < 10) {
-            alert(`⚠️ TIR ANNULÉ : Le budget minimum pour lancer le ${botType.toUpperCase()} est de 10 $ afin d'absorber les frais.`);
+            showToast(`⚠️ TIR ANNULÉ : Le budget minimum pour lancer le ${botType.toUpperCase()} est de 10 $ afin d'absorber les frais.`);
             return;
         }
         
@@ -321,18 +323,18 @@ export const LeaCrypto = () => {
 
     // 🚨 LE BOUTON D'URGENCE (KILL SWITCH)
     const handleEmergencyStop = async () => {
-        if(window.confirm("🚨 URGENCE ABSOLUE : Es-tu sûr de vouloir COUPER tous les bots de trading instantanément ?")) {
+        askConfirm("🚨 URGENCE ABSOLUE : Es-tu sûr de vouloir COUPER tous les bots de trading instantanément ?", async () => {
             try {
                 if (isSniperRunning) await fetch('/api/crypto/bot/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'stop', username: currentUser, botType: 'sniper' }) });
                 if (isEclairRunning) await fetch('/api/crypto/bot/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'stop', username: currentUser, botType: 'eclair' }) });
-                
+
                 setIsSniperRunning(false);
                 setIsEclairRunning(false);
                 setLogs(prev => [...prev, { bot: 'SYSTÈME', text: `🛑 [ARRÊT D'URGENCE] Tous les moteurs ont été coupés.`, time: new Date().toLocaleTimeString() }]);
             } catch (e) {
                 setLogs(prev => [...prev, { bot: 'SYSTÈME', text: `❌ Erreur lors de l'arrêt d'urgence.`, time: new Date().toLocaleTimeString() }]);
             }
-        }
+        });
     };
 
     // --- MOTEUR D'ENREGISTREMENT DES CLÉS ---
@@ -487,7 +489,8 @@ export const LeaCrypto = () => {
 
     return (
         <div className="flex h-full w-full bg-[#0a0e14] text-white overflow-hidden rounded-xl border border-gray-800 shadow-2xl relative">
-            
+            <ConfirmToastHost />
+
             {/* MENU LATÉRAL */}
             <div className="w-64 bg-[#111827] p-4 border-r border-teal-500/20 flex flex-col z-10">
                 <h2 className="text-xl font-bold text-teal-400 mb-8 tracking-wider flex items-center space-x-2">

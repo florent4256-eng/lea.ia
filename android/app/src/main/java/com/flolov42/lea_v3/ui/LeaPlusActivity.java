@@ -20,7 +20,11 @@ import com.flolov42.lea_v3.utilities.*;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.widget.*;
@@ -32,10 +36,12 @@ import java.util.List;
 public class LeaPlusActivity extends Activity implements LeaPlusManager.StateListener {
 
     // ── Galaxy palette ────────────────────────────────────────────────────────
-    private static final int BG    = 0xFF011627;
-    private static final int CYAN  = 0xFF00E5FF;
-    private static final int CARD  = 0xFF012040;
-    private static final int GOLD  = 0xFFFFD700;
+    private static final int BG     = 0xFF020617;
+    private static final int CYAN   = 0xFF00E5FF;
+    private static final int VIOLET = 0xFF7C3AED;
+    private static final int CARD   = 0xFF0B1526;
+    private static final int GOLD   = 0xFFFFD700;
+    private static final int GLASS_BORDER = 0x1EFFFFFF;
 
     // ── Manager ───────────────────────────────────────────────────────────────
     private LeaPlusManager manager;
@@ -92,33 +98,48 @@ public class LeaPlusActivity extends Activity implements LeaPlusManager.StateLis
         LinearLayout h = new LinearLayout(this);
         h.setOrientation(LinearLayout.HORIZONTAL);
         h.setGravity(Gravity.CENTER_VERTICAL);
-        h.setBackgroundColor(CARD);
-        h.setPadding(dp(16), dp(14), dp(16), dp(14));
+        h.setBackgroundColor(BG);
+        h.setPadding(dp(12), dp(20), dp(16), dp(12));
 
         Button back = new Button(this);
         back.setText("←");
         back.setTextColor(CYAN);
-        back.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        GradientDrawable backBg = new GradientDrawable();
+        backBg.setColor(0x14FFFFFF);
+        backBg.setShape(GradientDrawable.OVAL);
+        backBg.setStroke(dp(1), GLASS_BORDER);
+        back.setBackground(new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), backBg, null));
         back.setTextSize(20);
-        back.setPadding(0, 0, dp(8), 0);
+        back.setPadding(0, 0, 0, dp(2));
         back.setOnClickListener(v -> finish());
-        h.addView(back);
+        h.addView(back, new LinearLayout.LayoutParams(dp(48), dp(48)));
 
         TextView title = new TextView(this);
         title.setText("LÉA PLUS ✨");
-        title.setTextColor(CYAN);
+        title.setTextColor(Color.WHITE);
         title.setTextSize(20);
         title.setTypeface(null, Typeface.BOLD);
         title.setGravity(Gravity.CENTER);
+        title.setShadowLayer(dp(14), 0, 0, 0x8000E5FF);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        lp.gravity = Gravity.CENTER_VERTICAL;
         title.setLayoutParams(lp);
         h.addView(title);
 
         TextView sub = new TextView(this);
         sub.setText("15 FEATURES");
-        sub.setTextColor(0xFFFFD700);
-        sub.setTextSize(10);
+        sub.setTextColor(GOLD);
+        sub.setTextSize(9);
+        sub.setTypeface(null, Typeface.BOLD);
+        sub.setLetterSpacing(0.06f);
         sub.setGravity(Gravity.CENTER);
+        GradientDrawable subBg = new GradientDrawable();
+        subBg.setColor(0x22FFD700);
+        subBg.setCornerRadius(dp(20));
+        subBg.setStroke(dp(1), 0xFFFFD700);
+        sub.setBackground(subBg);
+        sub.setPadding(dp(10), dp(4), dp(10), dp(4));
+        sub.setShadowLayer(dp(8), 0, 0, 0x66FFD700);
         h.addView(sub);
 
         return h;
@@ -127,12 +148,18 @@ public class LeaPlusActivity extends Activity implements LeaPlusManager.StateLis
     // ── Tab bar ───────────────────────────────────────────────────────────────
     private HorizontalScrollView buildTabBar() {
         HorizontalScrollView hsv = new HorizontalScrollView(this);
-        hsv.setBackgroundColor(0xFF010E1A);
+        hsv.setBackgroundColor(BG);
         hsv.setHorizontalScrollBarEnabled(false);
+        hsv.setPadding(dp(16), 0, dp(16), dp(14));
 
         LinearLayout bar = new LinearLayout(this);
         bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setPadding(dp(8), dp(6), dp(8), dp(6));
+        GradientDrawable barBg = new GradientDrawable();
+        barBg.setColor(0x14FFFFFF);
+        barBg.setCornerRadius(dp(16));
+        barBg.setStroke(dp(1), GLASS_BORDER);
+        bar.setBackground(barBg);
+        bar.setPadding(dp(4), dp(4), dp(4), dp(4));
 
         String[][] tabs = {
             {LeaPlusManager.TAB_GAMIFICATION, "🎮 GAMIF"},
@@ -147,11 +174,13 @@ public class LeaPlusActivity extends Activity implements LeaPlusManager.StateLis
             btn.setText(tab[1]);
             btn.setTextSize(10);
             btn.setTypeface(null, Typeface.BOLD);
+            btn.setLetterSpacing(0.03f);
             btn.setAllCaps(false);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, dp(36));
-            lp.setMargins(dp(4), 0, dp(4), 0);
+                LinearLayout.LayoutParams.WRAP_CONTENT, dp(38));
+            lp.setMargins(dp(3), 0, dp(3), 0);
             btn.setLayoutParams(lp);
+            btn.setPadding(dp(12), 0, dp(12), 0);
             final String tabId = tab[0];
             btn.setOnClickListener(v -> showTab(tabId));
             tabButtons.put(tabId, btn);
@@ -167,8 +196,19 @@ public class LeaPlusActivity extends Activity implements LeaPlusManager.StateLis
             e.getValue().setVisibility(tab.equals(e.getKey()) ? View.VISIBLE : View.GONE);
         for (Map.Entry<String, Button> e : tabButtons.entrySet()) {
             boolean active = tab.equals(e.getKey());
-            e.getValue().setBackgroundColor(active ? CYAN : 0xFF022040);
-            e.getValue().setTextColor(active ? BG : CYAN);
+            Button b = e.getValue();
+            if (active) {
+                b.setTextColor(Color.WHITE);
+                GradientDrawable gd = new GradientDrawable(
+                    GradientDrawable.Orientation.LEFT_RIGHT, new int[]{CYAN, VIOLET});
+                gd.setCornerRadius(dp(12));
+                b.setBackground(gd);
+                b.setElevation(dp(2));
+            } else {
+                b.setTextColor(0xFF64748B);
+                b.setBackground(null);
+                b.setElevation(0f);
+            }
         }
     }
 
@@ -215,13 +255,23 @@ public class LeaPlusActivity extends Activity implements LeaPlusManager.StateLis
     }
 
     private LinearLayout buildFeatureCard(LeaPlusManager.FeatureInfo f) {
+        boolean enabledInit = manager.isEnabled(f.id);
+        int featColor = f.color == 0 ? CYAN : f.color;
+
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(14), dp(12), dp(14), dp(14));
-        card.setBackgroundColor(CARD);
+        GradientDrawable cardBg = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        cardBg.setCornerRadius(dp(20));
+        cardBg.setStroke(dp(1), enabledInit ? featColor : GLASS_BORDER);
+        card.setElevation(enabledInit ? dp(4) : dp(1));
+        card.setBackground(new RippleDrawable(
+            ColorStateList.valueOf((featColor & 0x00FFFFFF) | 0x33000000), cardBg, null));
         LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        cardLp.setMargins(0, 0, 0, dp(10));
+        cardLp.setMargins(0, 0, 0, dp(12));
         card.setLayoutParams(cardLp);
 
         // Top row: icon + name + switch
@@ -229,10 +279,8 @@ public class LeaPlusActivity extends Activity implements LeaPlusManager.StateLis
         topRow.setOrientation(LinearLayout.HORIZONTAL);
         topRow.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView icon = new TextView(this);
-        icon.setText(f.icon);
-        icon.setTextSize(22);
-        icon.setPadding(0, 0, dp(10), 0);
+        View icon = buildIconBadge(f.icon, featColor, 44, 20f);
+        ((LinearLayout.LayoutParams) icon.getLayoutParams()).setMargins(0, 0, dp(12), 0);
         topRow.addView(icon);
 
         LinearLayout nameBlock = new LinearLayout(this);
@@ -255,21 +303,23 @@ public class LeaPlusActivity extends Activity implements LeaPlusManager.StateLis
         topRow.addView(nameBlock);
 
         Switch sw = new Switch(this);
-        boolean enabled = manager.isEnabled(f.id);
+        styleSwitch(sw, featColor);
+        boolean enabled = enabledInit;
         sw.setChecked(enabled);
         sw.setOnCheckedChangeListener((v, checked) -> {
             if (checked) manager.enable(f.id);
             else         manager.disable(f.id);
+            cardBg.setStroke(dp(1), checked ? featColor : GLASS_BORDER);
+            card.setElevation(checked ? dp(4) : dp(1));
         });
         topRow.addView(sw);
         card.addView(topRow);
 
         // Status row
         View divider = new View(this);
-        divider.setBackgroundColor(0xFF023050);
-        divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)));
+        divider.setBackgroundColor(GLASS_BORDER);
         LinearLayout.LayoutParams divLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1));
-        divLp.setMargins(0, dp(8), 0, dp(8));
+        divLp.setMargins(0, dp(10), 0, dp(10));
         divider.setLayoutParams(divLp);
         card.addView(divider);
 
@@ -292,15 +342,20 @@ public class LeaPlusActivity extends Activity implements LeaPlusManager.StateLis
 
         // Action button
         Button actionBtn = new Button(this);
-        actionBtn.setText("▶ OUVRIR");
-        actionBtn.setTextColor(f.color == 0 ? CYAN : f.color);
-        actionBtn.setBackgroundColor(0xFF023050);
+        actionBtn.setText("▶  OUVRIR");
+        actionBtn.setTextColor(featColor);
+        GradientDrawable actionBg = new GradientDrawable();
+        actionBg.setColor((featColor & 0x00FFFFFF) | 0x22000000);
+        actionBg.setCornerRadius(dp(12));
+        actionBg.setStroke(dp(1), featColor);
+        actionBtn.setBackground(new RippleDrawable(
+            ColorStateList.valueOf((featColor & 0x00FFFFFF) | 0x55000000), actionBg, null));
         actionBtn.setTextSize(10);
         actionBtn.setTypeface(null, Typeface.BOLD);
         actionBtn.setAllCaps(false);
         LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT, dp(32));
-        btnLp.setMargins(0, dp(8), 0, 0);
+            LinearLayout.LayoutParams.WRAP_CONTENT, dp(34));
+        btnLp.setMargins(0, dp(10), 0, 0);
         actionBtn.setLayoutParams(btnLp);
         actionBtn.setOnClickListener(v -> openFeatureDetail(f));
         card.addView(actionBtn);
@@ -391,6 +446,43 @@ public class LeaPlusActivity extends Activity implements LeaPlusManager.StateLis
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /** Badge circulaire glow pour icônes emoji, cohérent avec le style Léa Agents/Routines. */
+    private View buildIconBadge(String emoji, int color, int sizeDp, float textSizeSp) {
+        TextView iconV = new TextView(this);
+        iconV.setText(emoji);
+        iconV.setTextSize(textSizeSp);
+        iconV.setGravity(Gravity.CENTER);
+        GradientDrawable iconBg = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ (color & 0x00FFFFFF) | 0x40000000, (color & 0x00FFFFFF) | 0x18000000 });
+        iconBg.setShape(GradientDrawable.OVAL);
+        iconBg.setStroke(dp(1), (color & 0x00FFFFFF) | 0x66000000);
+        iconV.setBackground(iconBg);
+        iconV.setElevation(dp(2));
+        iconV.setLayoutParams(new LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)));
+        return iconV;
+    }
+
+    /** Restyle un Switch Android par défaut aux couleurs Léa. */
+    private void styleSwitch(Switch sw, int color) {
+        sw.setTrackTintList(new ColorStateList(
+            new int[][]{ new int[]{ android.R.attr.state_checked }, new int[]{} },
+            new int[]{ (color & 0x00FFFFFF) | 0x88000000, 0xFF37474F }));
+        sw.setThumbTintList(new ColorStateList(
+            new int[][]{ new int[]{ android.R.attr.state_checked }, new int[]{} },
+            new int[]{ color, 0xFFCFD8DC }));
+    }
+
+    /** Éclaircit légèrement une couleur (glassmorphism : dégradé subtil au lieu d'un aplat). */
+    private int lighten(int color, float amount) {
+        int a = (color >>> 24) & 0xFF, r = (color >>> 16) & 0xFF, g = (color >>> 8) & 0xFF, b = color & 0xFF;
+        r = Math.min(255, (int) (r + (255 - r) * amount) + 8);
+        g = Math.min(255, (int) (g + (255 - g) * amount) + 8);
+        b = Math.min(255, (int) (b + (255 - b) * amount) + 8);
+        return (a << 24) | (r << 16) | (g << 8) | b;
+    }
+
     private int dp(int v) { return (int)(v * getResources().getDisplayMetrics().density); }
 
     private String getActiveLanguage() {

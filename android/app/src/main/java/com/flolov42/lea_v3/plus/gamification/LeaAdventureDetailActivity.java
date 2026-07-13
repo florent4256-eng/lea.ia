@@ -20,15 +20,16 @@ import com.flolov42.lea_v3.utilities.*;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
 
 public class LeaAdventureDetailActivity extends LeaFeatureDetailActivity {
 
-    private static final int BG    = 0xFF000D1A;
-    private static final int CARD  = 0xFF001A2E;
-    private static final int CARD2 = 0xFF00243F;
+    private static final int BG    = 0xFF020617;
+    private static final int CARD  = 0xFF0D1526;
+    private static final int CARD2 = 0xFF16233C;
     private static final int CYAN  = 0xFF00E5FF;
     private static final int PURPLE= 0xFF7C3AED;
     private static final int GREEN = 0xFF10B981;
@@ -38,6 +39,7 @@ public class LeaAdventureDetailActivity extends LeaFeatureDetailActivity {
     private static final int WHITE = 0xFFFFFFFF;
     private static final int DIM   = 0xFF64748B;
     private static final int DIM2  = 0xFF94A3B8;
+    private static final int GLASS_BORDER = 0x1EFFFFFF;
 
     @Override protected String getFeatureId() { return LeaPlusDatabase.ADVENTURE; }
 
@@ -51,7 +53,8 @@ public class LeaAdventureDetailActivity extends LeaFeatureDetailActivity {
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
         hero.setGravity(Gravity.CENTER);
-        hero.setBackgroundColor(CARD);
+        hero.setBackground(glassCard(dp(18), GLASS_BORDER));
+        hero.setElevation(dp(2));
         hero.setPadding(dp(20), dp(24), dp(20), dp(20));
         LinearLayout.LayoutParams hLp = new LinearLayout.LayoutParams(-1, -2);
         hLp.setMargins(dp(12), dp(8), dp(12), 0);
@@ -72,7 +75,8 @@ public class LeaAdventureDetailActivity extends LeaFeatureDetailActivity {
         // ── XP bar ────────────────────────────────────────────────────────
         LinearLayout xpCard = new LinearLayout(this);
         xpCard.setOrientation(LinearLayout.VERTICAL);
-        xpCard.setBackgroundColor(CARD);
+        xpCard.setBackground(glassCard(dp(18), GLASS_BORDER));
+        xpCard.setElevation(dp(2));
         xpCard.setPadding(dp(16), dp(14), dp(16), dp(14));
         LinearLayout.LayoutParams xpLp = new LinearLayout.LayoutParams(-1, -2);
         xpLp.setMargins(dp(12), dp(8), dp(12), 0);
@@ -115,7 +119,8 @@ public class LeaAdventureDetailActivity extends LeaFeatureDetailActivity {
         secHeader(parent, "🗺️ PROCHAINE ÉTAPE");
         LinearLayout nextCard = new LinearLayout(this);
         nextCard.setOrientation(LinearLayout.VERTICAL);
-        nextCard.setBackgroundColor(CARD);
+        nextCard.setBackground(glassCard(dp(18), GLASS_BORDER));
+        nextCard.setElevation(dp(2));
         nextCard.setPadding(dp(16), dp(14), dp(16), dp(14));
         LinearLayout.LayoutParams nLp = new LinearLayout.LayoutParams(-1, -2);
         nLp.setMargins(dp(12), dp(4), dp(12), 0); nextCard.setLayoutParams(nLp);
@@ -160,7 +165,8 @@ public class LeaAdventureDetailActivity extends LeaFeatureDetailActivity {
     }
     private LinearLayout miniStat(String icon, String val, String lbl, int color) {
         LinearLayout s = new LinearLayout(this); s.setOrientation(LinearLayout.VERTICAL);
-        s.setGravity(Gravity.CENTER); s.setBackgroundColor(CARD);
+        s.setGravity(Gravity.CENTER); s.setBackground(glassCard(dp(14), GLASS_BORDER));
+        s.setElevation(dp(2));
         s.setPadding(dp(6), dp(10), dp(6), dp(10));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1f);
         lp.setMargins(dp(3), 0, dp(3), 0); s.setLayoutParams(lp);
@@ -172,5 +178,14 @@ public class LeaAdventureDetailActivity extends LeaFeatureDetailActivity {
     private void secHeader(LinearLayout p, String text) {
         TextView t = tv(text, 11, GOLD, Typeface.BOLD);
         t.setPadding(dp(16), dp(14), dp(16), dp(6)); p.addView(t);
+    }
+    /** Fond glassmorphism arrondi pour cartes locales (dégradé subtil + bordure translucide). */
+    private GradientDrawable glassCard(int radius, int borderColor) {
+        GradientDrawable gd = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{ lighten(CARD, 0.06f), CARD });
+        gd.setCornerRadius(radius);
+        gd.setStroke(dp(1), borderColor);
+        return gd;
     }
 }

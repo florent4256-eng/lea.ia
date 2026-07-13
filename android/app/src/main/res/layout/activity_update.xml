@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#FFFFFF"
+    android:background="#020617"
     android:fitsSystemWindows="false">
 
     <!-- ══════════════════════════════════════════════════════ -->
@@ -13,21 +13,21 @@
     <RelativeLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="#FFFFFF"
-        android:paddingStart="4dp"
+        android:layout_height="64dp"
+        android:background="#020617"
+        android:paddingStart="10dp"
         android:paddingEnd="16dp">
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_centerVertical="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/lea_auto_back_circle_bg"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:tint="#000000"
+            android:tint="#00E5FF"
             android:contentDescription="Retour"
-            android:padding="12dp" />
+            android:padding="11dp" />
 
         <TextView
             android:id="@+id/topBarTitle"
@@ -38,16 +38,17 @@
             android:text="Léa"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#000000"
-            android:letterSpacing="0.01" />
+            android:textColor="#FFFFFF"
+            android:letterSpacing="0.01"
+            android:layout_marginStart="10dp" />
 
     </RelativeLayout>
 
     <!-- Séparateur -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="#E5E7EB" />
+        android:layout_height="1dp"
+        android:background="#1EFFFFFF" />
 
     <!-- ══════════════════════════════════════════════════════ -->
     <!--  ZONE CENTRALE                                        -->
@@ -56,7 +57,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:background="#FFFFFF"
+        android:background="#020617"
         android:fillViewport="true">
 
         <LinearLayout
@@ -135,7 +136,7 @@
                 android:text="Vérification..."
                 android:textSize="22sp"
                 android:textStyle="bold"
-                android:textColor="#111827"
+                android:textColor="#FFFFFF"
                 android:gravity="center"
                 android:letterSpacing="-0.01" />
 
@@ -147,7 +148,7 @@
                 android:layout_marginTop="8dp"
                 android:text=""
                 android:textSize="13sp"
-                android:textColor="#6B7280"
+                android:textColor="#94A3B8"
                 android:gravity="center"
                 android:lineSpacingExtra="2dp" />
 
@@ -158,7 +159,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:textSize="11sp"
-                android:textColor="#9CA3AF"
+                android:textColor="#64748B"
                 android:text=""
                 android:gravity="center" />
 
@@ -178,7 +179,7 @@
                     android:layout_height="wrap_content"
                     android:text="NOUVEAUTÉS"
                     android:textSize="10sp"
-                    android:textColor="#9CA3AF"
+                    android:textColor="#00E5FF"
                     android:textStyle="bold"
                     android:letterSpacing="0.1"
                     android:layout_marginBottom="10dp" />
@@ -188,7 +189,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
-                    android:textColor="#374151"
+                    android:textColor="#CFD8DC"
                     android:lineSpacingExtra="4dp" />
 
             </LinearLayout>
@@ -208,8 +209,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="4dp"
                     android:max="100"
-                    android:progressTint="#0088ff"
-                    android:progressBackgroundTint="#E5E7EB" />
+                    android:progressTint="#00E5FF"
+                    android:progressBackgroundTint="#1EFFFFFF" />
 
                 <TextView
                     android:id="@+id/downloadProgressText"
@@ -219,7 +220,7 @@
                     android:layout_marginTop="8dp"
                     android:text="0%"
                     android:textSize="12sp"
-                    android:textColor="#9CA3AF" />
+                    android:textColor="#94A3B8" />
 
             </LinearLayout>
 
@@ -233,7 +234,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#FFFFFF"
+        android:background="#020617"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
         android:paddingTop="12dp"
@@ -241,8 +242,8 @@
 
         <View
             android:layout_width="match_parent"
-            android:layout_height="0.5dp"
-            android:background="#E5E7EB"
+            android:layout_height="1dp"
+            android:background="#1EFFFFFF"
             android:layout_marginBottom="16dp" />
 
         <TextView
@@ -251,7 +252,7 @@
             android:layout_height="wrap_content"
             android:text="Les mises à jour obligatoires sont installées automatiquement au démarrage."
             android:textSize="11sp"
-            android:textColor="#9CA3AF"
+            android:textColor="#64748B"
             android:gravity="center"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="16dp" />
@@ -264,6 +265,7 @@
             android:textSize="15sp"
             android:textColor="#FFFFFF"
             android:textStyle="bold"
+            android:textAllCaps="false"
             android:letterSpacing="0.01"
             android:background="@drawable/btn_update_dark"
             android:enabled="false"
@@ -278,7 +280,7 @@
             android:layout_marginTop="12dp"
             android:text="Plus tard"
             android:textSize="14sp"
-            android:textColor="#9CA3AF"
+            android:textColor="#64748B"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:paddingTop="8dp"
